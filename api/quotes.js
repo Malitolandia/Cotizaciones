@@ -26,13 +26,17 @@ module.exports = async (req, res) => {
       }
 
       const cleanParts = (Array.isArray(parts) ? parts : [])
-        .map((p) => ({
-          id: crypto.randomUUID(),
-          name: (p.name || '').trim(),
-          code: (p.code || '').trim(),
-          unit: (p.unit || '').trim(),
-          description: (p.description || '').trim(),
-        }))
+        .map((p) => {
+          const qty = Number(p.quantity);
+          return {
+            id: crypto.randomUUID(),
+            name: (p.name || '').trim(),
+            code: (p.code || '').trim(),
+            unit: (p.unit || '').trim(),
+            description: (p.description || '').trim(),
+            quantity: Number.isFinite(qty) && qty > 0 ? String(qty) : '1',
+          };
+        })
         .filter((p) => p.name.length > 0);
 
       if (cleanParts.length === 0) {

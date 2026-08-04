@@ -16,11 +16,12 @@ module.exports = async (req, res) => {
 
   try {
     await ensureReady();
-    const [quotes, allParts, allSuppliers, allBids] = await Promise.all([
+    const [quotes, allParts, allSuppliers, allBids, allWinners] = await Promise.all([
       getRows('Quotes'),
       getRows('Parts'),
       getRows('Suppliers'),
       getRows('Bids'),
+      getRows('Winners'),
     ]);
 
     const quote = quotes.find((q) => q.uuid === uuid);
@@ -31,7 +32,14 @@ module.exports = async (req, res) => {
 
     const parts = allParts
       .filter((p) => p.quote_uuid === uuid)
-      .map((p) => ({ id: p.id, name: p.name, code: p.code, unit: p.unit, description: p.description }));
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        code: p.code,
+        unit: p.unit,
+        description: p.description,
+        quantity: Number(p.quantity) > 0 ? Number(p.quantity) : 1,
+      }));
 
     const suppliers = allSuppliers
       .filter((s) => s.quote_uuid === uuid)
@@ -43,12 +51,17 @@ module.exports = async (req, res) => {
       .map((b) => ({ supplierId: b.supplier_id, partId: b.part_id, price: Number(b.price), notes: b.notes }))
       .filter((b) => !Number.isNaN(b.price));
 
+    const winners = allWinners
+      .filter((w) => w.quote_uuid === uuid)
+      .map((w) => ({ partId: w.part_id, supplierId: w.supplier_id }));
+
     res.status(200).json({
       title: quote.title,
       status: quote.status,
       parts,
       suppliers,
       bids,
+      winners,
     });
   } catch (err) {
     console.error(err);

@@ -6,9 +6,10 @@ const { google } = require('googleapis');
 // =====================================================================
 const SHEETS = {
   Quotes: ['uuid', 'title', 'status', 'created_at'],
-  Parts: ['id', 'quote_uuid', 'name', 'code', 'unit', 'description'],
+  Parts: ['id', 'quote_uuid', 'name', 'code', 'unit', 'description', 'quantity'],
   Suppliers: ['id', 'quote_uuid', 'company', 'phone', 'email', 'submitted_at'],
   Bids: ['id', 'supplier_id', 'part_id', 'price', 'notes'],
+  Winners: ['quote_uuid', 'part_id', 'supplier_id', 'chosen_at'],
 };
 
 function getSpreadsheetId() {
@@ -105,6 +106,42 @@ async function updateRow(sheetName, rowNumber, data) {
   });
 }
 
+async function getSheetIdByName(sheetName) {
+  const client = getClient();
+  const meta = await client.spreadsheets.get({ spreadsheetId: getSpreadsheetId() });
+  const sheet = (meta.data.sheets || []).find((s) => s.properties.title === sheetName);
+  return sheet ? sheet.properties.sheetId : null;
+}
+
+/**
+ * Elimina físicamente una fila de una hoja (por su número real de fila,
+ * el mismo `_row` que devuelve getRows). Usado para borrar repuestos que
+ * todavía no tienen ninguna cotización de proveedor asociada.
+ */
+async function deleteRow(sheetName, rowNumber) {
+  const client = getClient();
+  const sheetId = await getSheetIdByName(sheetName);
+  if (sheetId === null) throw new Error(`No se encontró la hoja ${sheetName}`);
+
+  await client.spreadsheets.batchUpdate({
+    spreadsheetId: getSpreadsheetId(),
+    requestBody: {
+      requests: [
+        {
+          deleteDimension: {
+            range: {
+              sheetId,
+              dimension: 'ROWS',
+              startIndex: rowNumber - 1,
+              endIndex: rowNumber,
+            },
+          },
+        },
+      ],
+    },
+  });
+}
+
 /**
  * Crea las 4 pestañas y sus encabezados si no existen todavía.
  * Se cachea en memoria del proceso (cada función serverless "fría"
@@ -136,19 +173,12 @@ async function ensureReady() {
   for (const name of Object.keys(SHEETS)) {
     const columns = SHEETS[name];
     const lastCol = colLetter(columns.length - 1);
-    const res = await client.spreadsheets.values.get({
+    await client.spreadsheets.values.update({
       spreadsheetId,
       range: `${name}!A1:${lastCol}1`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: [columns] },
     });
-    const hasHeader = (res.data.values || []).length > 0;
-    if (!hasHeader) {
-      await client.spreadsheets.values.update({
-        spreadsheetId,
-        range: `${name}!A1:${lastCol}1`,
-        valueInputOption: 'USER_ENTERED',
-        requestBody: { values: [columns] },
-      });
-    }
   }
 
   readyChecked = true;
@@ -160,5 +190,6 @@ module.exports = {
   appendRow,
   appendRows,
   updateRow,
+  deleteRow,
   ensureReady,
 };

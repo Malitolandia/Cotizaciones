@@ -48,9 +48,12 @@ function addPartRow() {
       <span>Repuesto</span>
       <button type="button" class="remove-link" data-remove="${key}">Quitar</button>
     </div>
-    <div class="grid-2">
-      <input type="text" class="part-name" placeholder="Nombre del repuesto *" required />
+    <div class="grid-3">
+      <input type="text" class="part-name" list="parts-catalog" placeholder="Nombre del repuesto *" required />
       <input type="text" class="part-code" placeholder="Código / referencia" />
+      <input type="number" class="part-quantity" placeholder="Cantidad" min="1" step="1" value="1" />
+    </div>
+    <div class="grid-2" style="margin-top:8px;">
       <input type="text" class="part-unit" placeholder="Unidad (ej: unidad, par)" />
       <input type="text" class="part-description" placeholder="Descripción / notas" />
     </div>
@@ -80,6 +83,20 @@ partsList.addEventListener('click', (e) => {
 document.getElementById('add-part-btn').addEventListener('click', addPartRow);
 addPartRow();
 
+async function loadPartCatalog() {
+  try {
+    const res = await fetch('/api/part-catalog');
+    if (!res.ok) return;
+    const data = await res.json();
+    const datalist = document.getElementById('parts-catalog');
+    datalist.innerHTML = (data.catalog || [])
+      .map((p) => `<option value="${escapeHtml(p.name)}"></option>`)
+      .join('');
+  } catch {
+    // Autocompletado es un plus, si falla no bloqueamos nada
+  }
+}
+
 // ---------------------------------------------------------------------
 // Crear cotización
 // ---------------------------------------------------------------------
@@ -97,6 +114,7 @@ createForm.addEventListener('submit', async (e) => {
     code: row.querySelector('.part-code').value.trim(),
     unit: row.querySelector('.part-unit').value.trim(),
     description: row.querySelector('.part-description').value.trim(),
+    quantity: row.querySelector('.part-quantity').value.trim() || '1',
   })).filter((p) => p.name.length > 0);
 
   if (!title) {
@@ -188,7 +206,10 @@ function renderQuotes(quotes) {
               <p class="muted" style="margin: 2px 0 0;">Creada el ${created}</p>
               <span class="badge ${badgeClass}" style="margin-top:6px;">${badgeLabel}</span>
             </div>
-            <a href="/results.html?uuid=${q.uuid}" class="btn btn-secondary">Ver resultados</a>
+            <div>
+              <a href="/results.html?uuid=${q.uuid}" class="btn btn-secondary">Ver resultados</a>
+              <a href="/editar.html?uuid=${q.uuid}" class="btn-secondary" style="margin-top:6px; display:inline-flex;">✏️ Editar</a>
+            </div>
           </div>
           <div class="link-box">${link}</div>
           <div class="row-between" style="margin-top: 10px;">
@@ -237,5 +258,8 @@ quotesListEl.addEventListener('click', async (e) => {
 // ---------------------------------------------------------------------
 (async function init() {
   const ok = await checkSession();
-  if (ok) await loadQuotes();
+  if (ok) {
+    await loadQuotes();
+    loadPartCatalog();
+  }
 })();

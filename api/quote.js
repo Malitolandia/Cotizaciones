@@ -30,6 +30,7 @@ module.exports = async (req, res) => {
         code: p.code,
         unit: p.unit,
         description: p.description,
+        quantity: Number(p.quantity) > 0 ? Number(p.quantity) : 1,
       }));
 
     res.status(200).json({

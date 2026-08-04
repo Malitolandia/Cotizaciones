@@ -11,22 +11,79 @@ public/                    Todo lo que ve el navegador (estático)
   index.html                Landing
   admin-login.html           Login del admin
   admin.html                 Panel: crear cotización + listado
-  cotizar.html                Página pública del proveedor (?uuid=...)
-  results.html                Comparativo de precios (?uuid=...)
+  editar.html                Editar título/repuestos de una cotización
+  cotizar.html               Página pública del proveedor (?uuid=...)
+  results.html               Comparativo, ganador por repuesto, exportar, WhatsApp (?uuid=...)
+  buscar.html                Buscador histórico de repuestos
+  proveedores.html           Historial de desempeño por proveedor
   css/styles.css
-  js/login.js, admin.js, cotizar.js, results.js
+  js/login.js, admin.js, editar.js, cotizar.js, results.js, buscar.js, proveedores.js
 
 api/                        Backend (cada archivo = 1 función serverless)
   _lib/sheets.js              Auth + CRUD genérico sobre Google Sheets
   _lib/auth.js                Cookie de sesión admin (sha256 de ADMIN_PASSWORD)
+  _lib/notify.js               Notificación por correo opcional (Resend)
   login.js / logout.js / session.js
   quotes.js                   GET listar (admin) / POST crear (admin)
   quote.js                    GET cotización + repuestos (público, ?uuid=)
+  quote-edit.js                GET/POST editar título y repuestos (admin, ?uuid=)
   quote-status.js             POST cerrar/reabrir (admin)
   suppliers.js                POST registrar proveedor (público, valida teléfono duplicado)
-  bids.js                     POST enviar precios (público)
-  results.js                  GET comparativo completo (admin, ?uuid=)
+  bids.js                     POST enviar precios (público) + dispara notificación opcional
+  results.js                  GET comparativo completo, cantidades y ganadores (admin, ?uuid=)
+  set-winner.js                POST marcar/quitar ganador de un repuesto (admin)
+  part-catalog.js               GET nombres históricos de repuestos, para autocompletar (admin)
+  search-parts.js               GET buscador histórico de repuestos (admin)
+  supplier-stats.js             GET historial de desempeño por proveedor (admin)
 ```
+
+## Funcionalidades
+
+- Crear cotizaciones con **cantidad por repuesto** (el comparativo calcula precio × cantidad).
+- **Editar** una cotización ya creada (título y repuestos) desde `/editar.html?uuid=...`.
+  Un repuesto que ya recibió precios de algún proveedor no se puede borrar (para no dejar
+  precios huérfanos), pero sí se puede seguir editando su nombre/código/cantidad.
+- **Elegir ganador** por repuesto directamente en la tabla de resultados — arma
+  automáticamente una "Lista de compra" agrupada por proveedor con el total a pagar a cada uno.
+- **Catálogo con autocompletado**: al crear o editar una cotización, el campo de nombre del
+  repuesto sugiere nombres ya usados antes (para evitar duplicados como "pastillas freno" /
+  "pastillas de freno").
+- **Historial de proveedores** (`/proveedores.html`): veces invitado, precios enviados, veces
+  que tuvo el precio más bajo, veces elegido como ganador.
+- **Botón de WhatsApp** en cada tarjeta de contacto de proveedor (abre wa.me con mensaje
+  pre-armado).
+- **Exportar a Excel / PDF** desde la página de resultados (se genera en el navegador, no
+  necesita backend adicional).
+- **Notificación por correo** (opcional) cuando un proveedor envía precios — ver más abajo.
+- Buscador de repuestos histórico (`/buscar.html`) con precio más bajo histórico.
+
+## Cambios en el Google Sheet
+
+Estos cambios se aplican solos la primera vez que la app corre después de actualizar el
+código — no necesitas tocar el Sheet a mano:
+
+- La pestaña `Parts` ahora tiene una columna extra `quantity` al final.
+- Se crea una pestaña nueva `Winners` (quote_uuid, part_id, supplier_id, chosen_at) para
+  guardar qué proveedor elegiste como ganador de cada repuesto.
+- Si ya tenías repuestos creados antes de este cambio, su cantidad queda vacía; la app la
+  trata como `1` automáticamente hasta que la edites.
+
+## Notificación por correo (opcional)
+
+Si quieres que te llegue un correo cada vez que un proveedor envía precios, agrega estas
+variables de entorno (si no las agregas, la app sigue funcionando igual, solo sin avisos):
+
+```
+RESEND_API_KEY=tu-api-key-de-resend.com
+ADMIN_EMAIL=tu-correo@ejemplo.com
+RESEND_FROM_EMAIL=onboarding@resend.dev   # opcional, o tu dominio verificado en Resend
+SITE_URL=https://tu-proyecto.vercel.app   # opcional, para incluir el link directo al resultado
+```
+
+[resend.com](https://resend.com) tiene un plan gratis y no requiere tarjeta para empezar;
+con la dirección `onboarding@resend.dev` puedes enviarte correos a ti mismo sin verificar
+un dominio propio (para producción real con tu propio dominio, sí tendrías que verificarlo
+en Resend).
 
 ## 1. Preparar Google Sheets (igual que siempre)
 

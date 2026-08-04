@@ -253,6 +253,18 @@ input:focus {
   gap: 8px;
 }
 
+.grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+@media (max-width: 480px) {
+  .grid-3 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .link-box {
   background: var(--navy-50);
   color: var(--navy-700);
@@ -344,4 +356,99 @@ tfoot td {
   font-size: 0.85rem;
   text-align: center;
   padding: 24px 0;
+}
+
+/* --- Ganador por repuesto / lista de compra --- */
+td.cell-winner {
+  outline: 2px solid var(--navy-500);
+  outline-offset: -2px;
+  position: relative;
+}
+
+.winner-btn {
+  display: block;
+  margin-top: 3px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: none;
+  border: none;
+  color: var(--navy-500);
+  cursor: pointer;
+  padding: 0;
+}
+
+.winner-btn.is-winner {
+  color: var(--green-700);
+}
+
+.purchase-group {
+  border: 1px solid var(--navy-100);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+
+.purchase-group-total {
+  font-weight: 800;
+  color: var(--navy-800);
+  font-size: 1.05rem;
+}
+
+.whatsapp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #25d366;
+  color: #fff;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+  margin-top: 8px;
+}
+
+.whatsapp-btn:hover {
+  opacity: 0.9;
+}
+
+.export-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* --- Estadísticas de proveedores --- */
+.stats-table th,
+.stats-table td {
+  padding: 8px 10px;
+  font-size: 0.85rem;
+}
+
+.stats-table th {
+  text-align: left;
+  color: var(--navy-700);
+  border-bottom: 2px solid var(--navy-200);
+}
+
+.stats-table td {
+  border-top: 1px solid var(--navy-100);
+  color: var(--navy-700);
+}
+
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--navy-100);
+  color: var(--navy-700);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.qty-input {
+  width: 100%;
 }

@@ -101,9 +101,10 @@ function renderBidsStep(supplierId) {
               }</p>`
             : ''
         }
+        <p class="muted" style="margin:2px 0; font-weight:700;">Cantidad solicitada: ${part.quantity || 1}</p>
         ${part.description ? `<p class="muted" style="margin:2px 0 8px;">${escapeHtml(part.description)}</p>` : ''}
         <div class="grid-2" style="margin-top:8px;">
-          <input type="number" step="0.01" min="0" class="bid-price" data-part-id="${part.id}" placeholder="Precio (COP)" />
+          <input type="number" step="0.01" min="0" class="bid-price" data-part-id="${part.id}" placeholder="Precio unitario (COP)" />
           <input type="text" class="bid-notes" data-part-id="${part.id}" placeholder="Notas (opcional)" />
         </div>
       </div>

@@ -1,5 +1,6 @@
 const crypto = require('crypto');
-const { appendRows, ensureReady } = require('./_lib/sheets');
+const { getRows, appendRows, ensureReady } = require('./_lib/sheets');
+const { notifyNewBid } = require('./_lib/notify');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -31,9 +32,28 @@ module.exports = async (req, res) => {
   try {
     await ensureReady();
     await appendRows('Bids', cleanBids);
-    res.status(201).json({ ok: true });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error al comunicarse con Google Sheets' });
+    return;
+  }
+
+  res.status(201).json({ ok: true });
+
+  // Notificación por correo (después de responder; si falla, no afecta al proveedor)
+  try {
+    const [suppliers, quotes] = await Promise.all([getRows('Suppliers'), getRows('Quotes')]);
+    const supplier = suppliers.find((s) => s.id === supplierId);
+    if (supplier) {
+      const quote = quotes.find((q) => q.uuid === supplier.quote_uuid);
+      await notifyNewBid({
+        quoteTitle: quote ? quote.title : '',
+        quoteUuid: supplier.quote_uuid,
+        company: supplier.company,
+        phone: supplier.phone,
+      });
+    }
+  } catch (notifyErr) {
+    console.error('Error enviando notificación:', notifyErr);
   }
 };

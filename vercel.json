@@ -1,7 +1,0 @@
-{
-  "rewrites": [
-    { "source": "/api/login", "destination": "/api/auth" },
-    { "source": "/api/logout", "destination": "/api/auth" },
-    { "source": "/api/session", "destination": "/api/auth" }
-  ]
-}

@@ -93,16 +93,25 @@ function renderBidsStep(supplierId) {
     .map(
       (part) => `
       <div class="part-row">
-        <p style="font-weight:700; margin:0;">${escapeHtml(part.name)}</p>
-        ${
-          part.code || part.unit
-            ? `<p class="muted" style="margin:2px 0;">${part.code ? 'Código: ' + escapeHtml(part.code) : ''} ${
-                part.unit ? '· Unidad: ' + escapeHtml(part.unit) : ''
-              }</p>`
-            : ''
-        }
-        <p class="muted" style="margin:2px 0; font-weight:700;">Cantidad solicitada: ${part.quantity || 1}</p>
-        ${part.description ? `<p class="muted" style="margin:2px 0 8px;">${escapeHtml(part.description)}</p>` : ''}
+        <div class="part-with-image">
+          <div class="part-fields">
+            <p style="font-weight:700; margin:0;">${escapeHtml(part.name)}</p>
+            ${
+              part.code || part.unit
+                ? `<p class="muted" style="margin:2px 0;">${part.code ? 'Código: ' + escapeHtml(part.code) : ''} ${
+                    part.unit ? '· Unidad: ' + escapeHtml(part.unit) : ''
+                  }</p>`
+                : ''
+            }
+            <p class="muted" style="margin:2px 0; font-weight:700;">Cantidad solicitada: ${part.quantity || 1}</p>
+            ${part.description ? `<p class="muted" style="margin:2px 0 8px;">${escapeHtml(part.description)}</p>` : ''}
+          </div>
+          ${
+            part.image
+              ? `<div class="part-image-box"><img class="image-thumb" src="${part.image}" alt="Foto de ${escapeHtml(part.name)}" /></div>`
+              : ''
+          }
+        </div>
         <div class="grid-2" style="margin-top:8px;">
           <input type="number" step="0.01" min="0" class="bid-price" data-part-id="${part.id}" placeholder="Precio unitario (COP)" />
           <input type="text" class="bid-notes" data-part-id="${part.id}" placeholder="Notas (opcional)" />

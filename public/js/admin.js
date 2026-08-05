@@ -43,23 +43,76 @@ function addPartRow() {
   const row = document.createElement('div');
   row.className = 'part-row';
   row.dataset.key = key;
+  row.dataset.image = '';
   row.innerHTML = `
     <div class="part-row-header">
       <span>Repuesto</span>
       <button type="button" class="remove-link" data-remove="${key}">Quitar</button>
     </div>
-    <div class="grid-3">
-      <input type="text" class="part-name" list="parts-catalog" placeholder="Nombre del repuesto *" required />
-      <input type="text" class="part-code" placeholder="Código / referencia" />
-      <input type="number" class="part-quantity" placeholder="Cantidad" min="1" step="1" value="1" />
-    </div>
-    <div class="grid-2" style="margin-top:8px;">
-      <input type="text" class="part-unit" placeholder="Unidad (ej: unidad, par)" />
-      <input type="text" class="part-description" placeholder="Descripción / notas" />
+    <div class="part-with-image">
+      <div class="part-fields">
+        <div class="grid-3">
+          <input type="text" class="part-name" list="parts-catalog" placeholder="Nombre del repuesto *" required />
+          <input type="text" class="part-code" placeholder="Código / referencia" />
+          <input type="number" class="part-quantity" placeholder="Cantidad" min="1" step="1" value="1" />
+        </div>
+        <div class="grid-2" style="margin-top:8px;">
+          <input type="text" class="part-unit" placeholder="Unidad (ej: unidad, par)" />
+          <input type="text" class="part-description" placeholder="Descripción / notas" />
+        </div>
+      </div>
+      <div class="part-image-box">
+        <label class="image-upload-label">
+          <input type="file" class="part-image-input" accept="image/jpeg,image/png" hidden />
+          <span class="image-upload-placeholder">📷<br>Foto</span>
+          <img class="image-thumb" style="display:none;" alt="Foto del repuesto" />
+        </label>
+        <button type="button" class="remove-image-link" style="display:none;">Quitar foto</button>
+      </div>
     </div>
   `;
   partsList.appendChild(row);
+  attachImageHandlers(row);
   updateRemoveButtons();
+}
+
+function attachImageHandlers(row) {
+  const fileInput = row.querySelector('.part-image-input');
+  const thumb = row.querySelector('.image-thumb');
+  const placeholder = row.querySelector('.image-upload-placeholder');
+  const removeBtn = row.querySelector('.remove-image-link');
+
+  function setImage(dataUrl) {
+    row.dataset.image = dataUrl || '';
+    if (dataUrl) {
+      thumb.src = dataUrl;
+      thumb.style.display = 'block';
+      placeholder.style.display = 'none';
+      removeBtn.style.display = 'inline';
+    } else {
+      thumb.src = '';
+      thumb.style.display = 'none';
+      placeholder.style.display = 'block';
+      removeBtn.style.display = 'none';
+    }
+  }
+
+  fileInput.addEventListener('change', async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    placeholder.textContent = 'Procesando…';
+    try {
+      const compressed = await compressImageFile(file);
+      setImage(compressed);
+    } catch (err) {
+      alert(err.message || 'No se pudo procesar la imagen.');
+    } finally {
+      placeholder.innerHTML = '📷<br>Foto';
+      fileInput.value = '';
+    }
+  });
+
+  removeBtn.addEventListener('click', () => setImage(''));
 }
 
 function updateRemoveButtons() {
@@ -115,6 +168,7 @@ createForm.addEventListener('submit', async (e) => {
     unit: row.querySelector('.part-unit').value.trim(),
     description: row.querySelector('.part-description').value.trim(),
     quantity: row.querySelector('.part-quantity').value.trim() || '1',
+    image: row.dataset.image || '',
   })).filter((p) => p.name.length > 0);
 
   if (!title) {

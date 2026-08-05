@@ -107,6 +107,7 @@ module.exports = async (req, res) => {
           unit: p.unit,
           description: p.description,
           quantity: Number(p.quantity) > 0 ? Number(p.quantity) : 1,
+          image: p.image || '',
         }));
       res.status(200).json({ uuid: quote.uuid, title: quote.title, status: quote.status, parts });
       return;
@@ -228,6 +229,7 @@ module.exports = async (req, res) => {
             unit: (p.unit || '').trim(),
             description: (p.description || '').trim(),
             quantity: Number.isFinite(qty) && qty > 0 ? String(qty) : '1',
+            image: typeof p.image === 'string' ? p.image.slice(0, 45000) : '',
           };
         })
         .filter(p => p.name.length > 0);
@@ -434,6 +436,7 @@ module.exports = async (req, res) => {
           unit: p.unit,
           description: p.description,
           quantity: Number(p.quantity) > 0 ? Number(p.quantity) : 1,
+          image: p.image || '',
         }));
       const suppliers = allSuppliers
         .filter(s => s.quote_uuid === uuid)
@@ -484,6 +487,7 @@ module.exports = async (req, res) => {
           unit: p.unit,
           description: p.description,
           quantity: Number(p.quantity) > 0 ? Number(p.quantity) : 1,
+          image: p.image || '',
           hasBids: bidPartIds.has(p.id),
         }));
       res.status(200).json({ uuid: quote.uuid, title: quote.title, status: quote.status, parts });
@@ -527,12 +531,17 @@ module.exports = async (req, res) => {
         if (!name) continue;
         const qty = Number(p.quantity);
         const cleanQty = Number.isFinite(qty) && qty > 0 ? String(qty) : '1';
+        const existingForImage = p.id ? existingById.get(p.id) : null;
+        const cleanImage = typeof p.image === 'string'
+          ? p.image.slice(0, 45000)
+          : (existingForImage ? existingForImage.image || '' : '');
         const cleanFields = {
           name,
           code: (p.code || '').trim(),
           unit: (p.unit || '').trim(),
           description: (p.description || '').trim(),
           quantity: cleanQty,
+          image: cleanImage,
         };
         if (p.id && existingById.has(p.id)) {
           const existing = existingById.get(p.id);

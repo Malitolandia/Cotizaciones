@@ -6,7 +6,7 @@ const { google } = require('googleapis');
 // =====================================================================
 const SHEETS = {
   Quotes: ['uuid', 'title', 'status', 'created_at'],
-  Parts: ['id', 'quote_uuid', 'name', 'code', 'unit', 'description', 'quantity'],
+  Parts: ['id', 'quote_uuid', 'name', 'code', 'unit', 'description', 'quantity', 'image'],
   Suppliers: ['id', 'quote_uuid', 'company', 'phone', 'email', 'submitted_at'],
   Bids: ['id', 'supplier_id', 'part_id', 'price', 'notes'],
   Winners: ['quote_uuid', 'part_id', 'supplier_id', 'chosen_at'],

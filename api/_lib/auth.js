@@ -28,15 +28,13 @@ function isAuthenticated(req) {
 
 function setSessionCookie(res) {
   const token = expectedToken();
-  const isProd = process.env.VERCEL_ENV === 'production';
   const parts = [
     `${COOKIE_NAME}=${encodeURIComponent(token)}`,
     'Path=/',
     'HttpOnly',
     'SameSite=Lax',
-    `Max-Age=${60 * 60 * 8}`, // 8 horas
+    `Max-Age=${60 * 60 * 8}`,
   ];
-  if (isProd) parts.push('Secure');
   res.setHeader('Set-Cookie', parts.join('; '));
 }
 

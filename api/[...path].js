@@ -4,7 +4,7 @@
 const crypto = require('crypto');
 const { getRows, appendRow, appendRows, updateRow, deleteRow, ensureReady } = require('./_lib/sheets');
 const { notifyNewBid } = require('./_lib/notify');
-const { requireAuth } = require('./_lib/auth'); // <-- IMPORTADO
+const { requireAuth, setSessionCookie, clearSessionCookie, isAuthenticated } = require('./_lib/auth');
 
 // ============================================================
 // Utilidades
@@ -62,32 +62,38 @@ module.exports = async (req, res) => {
     console.log(`📍 Ruta: ${url}, Método: ${method}`);
 
     // ============================================================
-    // RUTAS DE AUTENTICACIÓN (simuladas, siempre OK)
+    // RUTAS DE AUTENTICACIÓN (reales)
     // ============================================================
 
-    // POST /api/login (siempre éxito)
+    // POST /api/login
     if (url === '/api/login' && method === 'POST') {
-      console.log('🔑 Login simulado (sin contraseña)');
+      const { password } = body;
+      const expected = process.env.ADMIN_PASSWORD || '';
+      if (!password || password !== expected) {
+        res.status(401).json({ error: 'Contraseña incorrecta' });
+        return;
+      }
+      setSessionCookie(res);
       res.status(200).json({ ok: true });
       return;
     }
 
     // POST /api/logout
     if (url === '/api/logout' && method === 'POST') {
-      console.log('🚪 Logout simulado');
+      clearSessionCookie(res);
       res.status(200).json({ ok: true });
       return;
     }
 
-    // GET /api/session (siempre autenticado)
+    // GET /api/session
     if (url === '/api/session' && method === 'GET') {
-      console.log('🔐 Sesión siempre autenticada');
-      res.status(200).json({ authenticated: true });
+      const authenticated = isAuthenticated(req);
+      res.status(200).json({ authenticated });
       return;
     }
 
     // ============================================================
-    // RUTAS PÚBLICAS
+    // RUTAS PÚBLICAS (sin autenticación)
     // ============================================================
 
     // GET /api/quote (público)
@@ -120,7 +126,7 @@ module.exports = async (req, res) => {
       return;
     }
 
-    // GET /api/supplier-lookup (público) - para autocompletar
+    // GET /api/supplier-lookup (público)
     if (url === '/api/supplier-lookup' && method === 'GET') {
       const phone = query.phone || '';
       const normalized = normalizePhone(phone);
@@ -129,7 +135,6 @@ module.exports = async (req, res) => {
         return;
       }
       const suppliers = await getRows('Suppliers');
-      // Buscar por teléfono normalizado en cualquier cotización
       const match = suppliers.find(s => normalizePhone(s.phone) === normalized);
       if (match) {
         res.status(200).json({
@@ -143,7 +148,7 @@ module.exports = async (req, res) => {
       return;
     }
 
-    // POST /api/suppliers (público) - ahora solo registra si no existe
+    // POST /api/suppliers (público)
     if (url === '/api/suppliers' && method === 'POST') {
       const { uuid, company, phone } = body;
       const cleanCompany = (company || '').trim();
@@ -163,7 +168,6 @@ module.exports = async (req, res) => {
         return;
       }
 
-      // Verificar si ya existe un proveedor con ese teléfono para esta cotización
       const suppliers = await getRows('Suppliers');
       const normalized = cleanPhone.replace(/\D/g, '');
       const existing = suppliers.find(
@@ -184,7 +188,7 @@ module.exports = async (req, res) => {
           quote_uuid: uuid,
           company: cleanCompany,
           phone: cleanPhone,
-          email: '', // ya no se pide
+          email: '',
           submitted_at: new Date().toISOString(),
         });
       }
@@ -192,7 +196,7 @@ module.exports = async (req, res) => {
       return;
     }
 
-    // POST /api/bids (público) - sin notas, permite vacío
+    // POST /api/bids (público)
     if (url === '/api/bids' && method === 'POST') {
       const { supplierId, bids } = body;
       if (!supplierId || !Array.isArray(bids)) {
@@ -234,10 +238,10 @@ module.exports = async (req, res) => {
     }
 
     // ============================================================
-    // RUTAS ADMINISTRATIVAS (con autenticación)
+    // RUTAS ADMINISTRATIVAS (requieren autenticación)
     // ============================================================
 
-    // GET /api/quotes (listar todas)
+    // GET /api/quotes
     if (url === '/api/quotes' && method === 'GET') {
       if (!requireAuth(req, res)) return;
       const quotes = await getRows('Quotes');
@@ -290,7 +294,7 @@ module.exports = async (req, res) => {
       return;
     }
 
-    // DELETE /api/quotes (eliminar cotización completa)
+    // DELETE /api/quotes (eliminar)
     if (url === '/api/quotes' && method === 'DELETE') {
       if (!requireAuth(req, res)) return;
       const uuid = query.uuid;
@@ -299,7 +303,6 @@ module.exports = async (req, res) => {
         return;
       }
 
-      // Obtener todos los datos relacionados
       const [quotes, parts, suppliers, bids, winners] = await Promise.all([
         getRows('Quotes'),
         getRows('Parts'),
@@ -314,19 +317,15 @@ module.exports = async (req, res) => {
         return;
       }
 
-      // Obtener IDs de partes y suppliers para filtrar bids/winners
-      const partIds = parts.filter(p => p.quote_uuid === uuid).map(p => p.id);
       const supplierIds = suppliers.filter(s => s.quote_uuid === uuid).map(s => s.id);
 
-      // Eliminar winners (tienen quote_uuid)
-      const winnersToDelete = winners.filter(w => w.quote_uuid === uuid);
-      for (const w of winnersToDelete) {
+      // Eliminar winners
+      for (const w of winners.filter(w => w.quote_uuid === uuid)) {
         await deleteRow('Winners', w._row);
       }
 
-      // Eliminar bids (filtramos por supplier_id)
-      const bidsToDelete = bids.filter(b => supplierIds.includes(b.supplier_id));
-      for (const b of bidsToDelete) {
+      // Eliminar bids
+      for (const b of bids.filter(b => supplierIds.includes(b.supplier_id))) {
         await deleteRow('Bids', b._row);
       }
 
@@ -340,7 +339,7 @@ module.exports = async (req, res) => {
         await deleteRow('Parts', p._row);
       }
 
-      // Finalmente eliminar la cotización
+      // Eliminar la cotización
       await deleteRow('Quotes', quote._row);
 
       res.status(200).json({ ok: true });
@@ -559,7 +558,7 @@ module.exports = async (req, res) => {
       return;
     }
 
-    // GET /api/quote-edit (carga para editar)
+    // GET /api/quote-edit
     if (url === '/api/quote-edit' && method === 'GET') {
       if (!requireAuth(req, res)) return;
       const uuid = query.uuid;
@@ -600,7 +599,7 @@ module.exports = async (req, res) => {
       return;
     }
 
-    // POST /api/quote-edit (guardar cambios)
+    // POST /api/quote-edit
     if (url === '/api/quote-edit' && method === 'POST') {
       if (!requireAuth(req, res)) return;
       const uuid = query.uuid || body.uuid;

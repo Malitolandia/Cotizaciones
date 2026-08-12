@@ -133,23 +133,23 @@ p.subtitle {
   margin-bottom: 5px;
 }
 
-/* ----- MEJORA: inputs generales más grandes y cómodos ----- */
+/* ----- INPUTS GENERALES (más grandes para móvil) ----- */
 input[type='text'],
 input[type='password'],
 input[type='tel'],
 input[type='email'],
 input[type='number'] {
   width: 100%;
-  padding: 14px 16px;          /* más padding */
+  padding: 14px 16px;
   border: 1px solid var(--br);
   border-radius: 8px;
-  font-size: 1.1rem;           /* más grande */
+  font-size: 1.1rem;
   background: var(--s2);
   color: var(--tx);
   outline: none;
   font-family: 'Space Grotesk', sans-serif;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  min-height: 52px;            /* altura mínima para táctil */
+  min-height: 52px;
 }
 
 input::placeholder {
@@ -163,42 +163,16 @@ input:focus {
   box-shadow: 0 0 0 3px rgba(0, 229, 160, 0.15);
 }
 
-/* ----- MEJORA: input de precio específico (más grande y con indicador visual) ----- */
-.bid-price {
-  font-size: 1.2rem;
-  font-weight: 600;
-  padding: 14px 16px;
-  min-height: 56px;
-  background: var(--s2);
-  border-color: var(--br);
-  transition: border-color 0.2s, background 0.2s;
-}
-
-.bid-price:focus {
-  border-color: var(--ac);
-  background: #0e141f;
-  box-shadow: 0 0 0 4px rgba(0, 229, 160, 0.12);
-}
-
-/* Si el input tiene un valor (no vacío), le damos un borde verde sutil */
-.bid-price:not(:placeholder-shown) {
-  border-color: var(--ac);
-  background: #0e141f;
-}
-
-/* Placeholder más visible y con tamaño adecuado */
-.bid-price::placeholder {
-  color: var(--td);
-  font-weight: 400;
-  font-size: 0.95rem;
-}
-
-/* ----- MEJORA: espaciado entre repuestos ----- */
+/* ----- CAMPO DE PRECIO (claro, a la derecha del nombre) ----- */
 .part-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
   border: 1px solid var(--br);
   border-radius: 10px;
-  padding: 16px 14px;
-  margin-bottom: 16px;        /* más separación */
+  padding: 12px 14px;
+  margin-bottom: 12px;
   background: var(--s2);
   transition: border-color 0.2s;
 }
@@ -207,93 +181,82 @@ input:focus {
   border-color: #2a3048;
 }
 
-.part-row-header {
+/* Hacemos que el contenido (nombre, código, cantidad, imagen) ocupe la primera columna */
+.part-row > .part-with-image {
+  display: contents; /* elimina el contenedor para que sus hijos sean hijos directos de .part-row */
+}
+
+.part-row > .part-with-image .part-fields {
+  grid-column: 1;
+}
+
+.part-row > .part-with-image .part-image-box {
+  grid-column: 1;
+  /* la imagen se mantiene en la misma columna que el texto */
+}
+
+/* El contenedor del precio (segundo hijo directo) lo ponemos en la segunda columna */
+.part-row > div:last-child {
+  grid-column: 2;
+  grid-row: 1 / span 2; /* ocupa toda la altura de la fila */
+  margin-top: 0 !important;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  justify-content: flex-end;
 }
 
-.part-row-header span {
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--tm);
+/* Estilo del input de precio: claro, compacto y legible */
+.part-row > div:last-child .bid-price {
+  width: 150px;
+  max-width: 180px;
+  background: #f0f2f5; /* fondo claro */
+  color: #0a0c10;
+  border: 1px solid #b0b8c4;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  min-height: 44px;
+  text-align: center;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.remove-link {
-  background: none;
-  border: none;
-  color: var(--rd);
-  font-size: 0.72rem;
-  font-weight: 700;
-  cursor: pointer;
+.part-row > div:last-child .bid-price:focus {
+  border-color: var(--ac);
+  box-shadow: 0 0 0 3px rgba(0, 229, 160, 0.2);
+  outline: none;
 }
 
-.grid-2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+.part-row > div:last-child .bid-price::placeholder {
+  color: #6b7a8f;
+  font-weight: 400;
+  font-size: 0.9rem;
 }
 
-.grid-3 {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px;
+/* Cuando tiene un valor, borde verde para indicar que está lleno */
+.part-row > div:last-child .bid-price:not(:placeholder-shown) {
+  border-color: var(--ac);
+  background: #e8f5f0;
 }
 
-@media (max-width: 480px) {
-  .grid-3 {
-    grid-template-columns: 1fr 1fr;
+/* ----- RESPONSIVE: en pantallas pequeñas, el precio se apila debajo ----- */
+@media (max-width: 600px) {
+  .part-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .part-row > div:last-child {
+    grid-column: 1;
+    grid-row: auto;
+    justify-content: stretch;
+  }
+  .part-row > div:last-child .bid-price {
+    width: 100%;
+    max-width: 100%;
   }
 }
 
-/* ----- MEJORA: botón de envío más grande y con feedback ----- */
-#combined-submit,
-.btn-primary {
-  background: var(--ac);
-  color: #04110c;
-  width: 100%;
-  padding: 16px 20px;
-  font-size: 1.1rem;
-  font-weight: 700;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
-  min-height: 58px;
-  letter-spacing: 0.5px;
-}
-
-#combined-submit:hover:not(:disabled),
-.btn-primary:hover:not(:disabled) {
-  background: #00ffb3;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(0, 229, 160, 0.25);
-}
-
-#combined-submit:active:not(:disabled),
-.btn-primary:active:not(:disabled) {
-  transform: scale(0.98);
-}
-
-#combined-submit:disabled,
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* ----- Mejora: campos de empresa y teléfono más grandes ----- */
-#company,
-#phone {
-  font-size: 1.15rem;
-  padding: 16px 18px;
-  min-height: 56px;
-}
-
-/* ----- El resto del CSS se mantiene igual ----- */
+/* ----- RESTO DE ESTILOS (se mantienen igual) ----- */
 
 .field {
   margin-bottom: 16px;
@@ -347,6 +310,42 @@ input:focus {
   color: var(--tx);
 }
 
+/* ----- Botón de envío mejorado ----- */
+#combined-submit,
+.btn-primary {
+  background: var(--ac);
+  color: #04110c;
+  width: 100%;
+  padding: 16px 20px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+  min-height: 58px;
+  letter-spacing: 0.5px;
+}
+
+#combined-submit:hover:not(:disabled),
+.btn-primary:hover:not(:disabled) {
+  background: #00ffb3;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 229, 160, 0.25);
+}
+
+#combined-submit:active:not(:disabled),
+.btn-primary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+#combined-submit:disabled,
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .alert-error {
   background: rgba(255, 79, 100, 0.1);
   border: 1px solid rgba(255, 79, 100, 0.25);
@@ -393,6 +392,48 @@ input:focus {
   justify-content: space-between;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.part-row-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.part-row-header span {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--tm);
+}
+
+.remove-link {
+  background: none;
+  border: none;
+  color: var(--rd);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+@media (max-width: 480px) {
+  .grid-3 {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 .link-box {

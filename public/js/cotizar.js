@@ -125,7 +125,7 @@ function renderRegisterStep() {
 }
 
 // ---------------------------------------------------------------------
-// Paso 2: Ingreso de precios
+// Paso 2: Ingreso de precios (SIN NOTAS y permitiendo enviar vacío)
 // ---------------------------------------------------------------------
 function renderBidsStep(supplierId) {
   const imageHtml = renderQuoteImage(quoteData.image || '');
@@ -152,9 +152,8 @@ function renderBidsStep(supplierId) {
               : ''
           }
         </div>
-        <div class="grid-2" style="margin-top:8px;">
+        <div style="margin-top:8px;">
           <input type="number" step="0.01" min="0" class="bid-price" data-part-id="${part.id}" placeholder="Precio unitario (COP)" />
-          <input type="text" class="bid-notes" data-part-id="${part.id}" placeholder="Notas (opcional)" />
         </div>
       </div>
     `
@@ -185,21 +184,15 @@ function renderBidsStep(supplierId) {
     submitBtn.disabled = true;
     submitBtn.textContent = 'Enviando precios…';
 
+    // Recolectar solo los precios que tienen valor
     const bids = Array.from(document.querySelectorAll('.bid-price'))
       .map((input) => ({
         partId: input.dataset.partId,
         price: input.value.trim(),
-        notes: document.querySelector(`.bid-notes[data-part-id="${input.dataset.partId}"]`).value.trim(),
       }))
       .filter((b) => b.price.length > 0);
 
-    if (bids.length === 0) {
-      errorBox.innerHTML = '<div class="alert-error">Ingresa al menos un precio válido.</div>';
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Enviar cotización';
-      return;
-    }
-
+    // Ahora se permite enviar aunque bids esté vacío
     try {
       const res = await fetch('/api/bids', {
         method: 'POST',

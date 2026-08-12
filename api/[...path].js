@@ -112,7 +112,7 @@ module.exports = async (req, res) => {
       res.status(200).json({
         uuid: quote.uuid,
         title: quote.title,
-        image: quote.image || '',     // <-- AGREGADO
+        image: quote.image || '',
         status: quote.status,
         parts,
       });
@@ -163,44 +163,48 @@ module.exports = async (req, res) => {
       return;
     }
 
-    // POST /api/bids (público)
+    // ============================================================
+    // POST /api/bids (público) - MODIFICADO: sin notas y permite vacío
+    // ============================================================
     if (url === '/api/bids' && method === 'POST') {
       const { supplierId, bids } = body;
       if (!supplierId || !Array.isArray(bids)) {
         res.status(400).json({ error: 'Parámetros inválidos' });
         return;
       }
+      // Permitir que bids esté vacío (el proveedor no cotiza ningún repuesto)
       const cleanBids = bids
         .map(b => ({
           id: crypto.randomUUID(),
           supplier_id: supplierId,
           part_id: b.partId,
           price: String(b.price ?? '').trim(),
-          notes: (b.notes || '').trim(),
+          notes: '', // ya no se usa, pero mantenemos la columna vacía
         }))
         .filter(b => b.part_id && b.price.length > 0 && !Number.isNaN(Number(b.price)));
-      if (cleanBids.length === 0) {
-        res.status(400).json({ error: 'Ingresa al menos un precio válido' });
-        return;
+      // Si hay bids, guardarlos
+      if (cleanBids.length > 0) {
+        await appendRows('Bids', cleanBids);
       }
-      await appendRows('Bids', cleanBids);
       res.status(201).json({ ok: true });
 
-      // Notificación (asíncrona)
-      try {
-        const [suppliers, quotes] = await Promise.all([getRows('Suppliers'), getRows('Quotes')]);
-        const supplier = suppliers.find(s => s.id === supplierId);
-        if (supplier) {
-          const quote = quotes.find(q => q.uuid === supplier.quote_uuid);
-          await notifyNewBid({
-            quoteTitle: quote ? quote.title : '',
-            quoteUuid: supplier.quote_uuid,
-            company: supplier.company,
-            phone: supplier.phone,
-          });
+      // Notificación (asíncrona) solo si hay al menos un bid
+      if (cleanBids.length > 0) {
+        try {
+          const [suppliers, quotes] = await Promise.all([getRows('Suppliers'), getRows('Quotes')]);
+          const supplier = suppliers.find(s => s.id === supplierId);
+          if (supplier) {
+            const quote = quotes.find(q => q.uuid === supplier.quote_uuid);
+            await notifyNewBid({
+              quoteTitle: quote ? quote.title : '',
+              quoteUuid: supplier.quote_uuid,
+              company: supplier.company,
+              phone: supplier.phone,
+            });
+          }
+        } catch (notifyErr) {
+          console.error('Error enviando notificación:', notifyErr);
         }
-      } catch (notifyErr) {
-        console.error('Error enviando notificación:', notifyErr);
       }
       return;
     }
@@ -219,7 +223,7 @@ module.exports = async (req, res) => {
 
     // POST /api/quotes (crear)
     if (url === '/api/quotes' && method === 'POST') {
-      const { title, parts, image } = body;  // <-- AGREGADO image
+      const { title, parts, image } = body;
       const cleanTitle = (title || '').trim();
       const cleanImage = typeof image === 'string' ? image.slice(0, 45000) : '';
       if (!cleanTitle) {
@@ -248,7 +252,7 @@ module.exports = async (req, res) => {
       await appendRow('Quotes', {
         uuid,
         title: cleanTitle,
-        image: cleanImage,      // <-- AGREGADO
+        image: cleanImage,
         status: 'ACTIVE',
         created_at: new Date().toISOString(),
       });
@@ -501,7 +505,7 @@ module.exports = async (req, res) => {
       res.status(200).json({
         uuid: quote.uuid,
         title: quote.title,
-        image: quote.image || '',    // <-- AGREGADO
+        image: quote.image || '',
         status: quote.status,
         parts,
       });
@@ -515,7 +519,7 @@ module.exports = async (req, res) => {
         res.status(400).json({ error: 'Falta el parámetro uuid' });
         return;
       }
-      const { title, parts, removedPartIds, image } = body;  // <-- AGREGADO image
+      const { title, parts, removedPartIds, image } = body;
       const cleanTitle = (title || '').trim();
       const cleanImage = typeof image === 'string' ? image.slice(0, 45000) : '';
       if (!cleanTitle) {

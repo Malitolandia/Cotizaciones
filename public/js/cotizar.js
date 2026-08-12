@@ -1,3 +1,6 @@
+// ================================================================
+// VERSIÓN 2026-08-12 - SIN NOTAS - SI VES ESTO, ESTÁS USANDO LA NUEVA
+// ================================================================
 function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, (c) => ({
     '&': '&amp;',
@@ -7,6 +10,8 @@ function escapeHtml(str) {
     "'": '&#39;',
   }[c]));
 }
+
+console.log('✅ cotizar.js CARGADO - VERSIÓN SIN NOTAS');
 
 const app = document.getElementById('app');
 const uuid = new URLSearchParams(window.location.search).get('uuid');
@@ -125,10 +130,12 @@ function renderRegisterStep() {
 }
 
 // ---------------------------------------------------------------------
-// Paso 2: Ingreso de precios (SIN NOTAS)
+// Paso 2: Ingreso de precios (SIN NOTAS - ESTRUCTURA SIMPLIFICADA)
 // ---------------------------------------------------------------------
 function renderBidsStep(supplierId) {
   const imageHtml = renderQuoteImage(quoteData.image || '');
+  
+  // Construcción de la lista de repuestos SOLO con precio, sin notas
   const partsHtml = quoteData.parts
     .map(
       (part) => `
@@ -138,9 +145,7 @@ function renderBidsStep(supplierId) {
             <p style="font-weight:700; margin:0;">${escapeHtml(part.name)}</p>
             ${
               part.code || part.unit
-                ? `<p class="muted" style="margin:2px 0;">${part.code ? 'Código: ' + escapeHtml(part.code) : ''} ${
-                    part.unit ? '· Unidad: ' + escapeHtml(part.unit) : ''
-                  }</p>`
+                ? `<p class="muted" style="margin:2px 0;">${part.code ? 'Código: ' + escapeHtml(part.code) : ''} ${part.unit ? '· Unidad: ' + escapeHtml(part.unit) : ''}</p>`
                 : ''
             }
             <p class="muted" style="margin:2px 0; font-weight:700;">Cantidad solicitada: ${part.quantity || 1}</p>
@@ -152,8 +157,9 @@ function renderBidsStep(supplierId) {
               : ''
           }
         </div>
+        <!-- SOLO CAMPO DE PRECIO - SIN NOTAS -->
         <div style="margin-top:8px;">
-          <input type="number" step="0.01" min="0" class="bid-price" data-part-id="${part.id}" placeholder="Precio unitario (COP)" />
+          <input type="number" step="0.01" min="0" class="bid-price" data-part-id="${part.id}" placeholder="Precio unitario (COP)" style="width:100%; padding:10px 12px; border:1px solid var(--br); border-radius:8px; font-size:0.9rem; background:var(--s2); color:var(--tx); outline:none; font-family:'Space Grotesk', sans-serif;" />
         </div>
       </div>
     `
@@ -184,7 +190,6 @@ function renderBidsStep(supplierId) {
     submitBtn.disabled = true;
     submitBtn.textContent = 'Enviando precios…';
 
-    // Solo recolectamos precios (sin notas)
     const bids = Array.from(document.querySelectorAll('.bid-price'))
       .map((input) => ({
         partId: input.dataset.partId,
@@ -228,6 +233,7 @@ function renderBidsStep(supplierId) {
 // Inicialización
 // ---------------------------------------------------------------------
 async function init() {
+  console.log('🔍 Iniciando cotizar.js con uuid:', uuid);
   if (!uuid) {
     app.innerHTML = '<div class="card alert-error">Enlace inválido: falta el identificador de la cotización.</div>';
     return;
@@ -243,6 +249,7 @@ async function init() {
     }
 
     quoteData = data;
+    console.log('📦 Datos cargados:', quoteData);
 
     if (data.status === 'CLOSED') {
       const imageHtml = renderQuoteImage(data.image || '');
@@ -271,7 +278,8 @@ async function init() {
     }
 
     renderRegisterStep();
-  } catch {
+  } catch (err) {
+    console.error('❌ Error en init:', err);
     app.innerHTML = '<div class="card alert-error">Error de conexión. Intenta de nuevo más tarde.</div>';
   }
 }

@@ -95,7 +95,7 @@ h1, h2, h3 {
   text-transform: none;
   letter-spacing: normal;
   color: var(--tx);
-  margin: 0 0 16px 0;
+  margin: 0 0 8px 0;
 }
 
 h1 {
@@ -109,8 +109,8 @@ h2 {
 
 p.subtitle {
   color: var(--tm);
-  font-size: 0.95rem;
-  margin: 0 0 16px;
+  font-size: 0.9rem;
+  margin: 0 0 10px 0;
 }
 
 .label {
@@ -118,7 +118,7 @@ p.subtitle {
   font-size: 0.85rem;
   font-weight: 500;
   color: #4b5563;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
 }
 
 .muted {
@@ -137,16 +137,16 @@ input[type='tel'],
 input[type='email'],
 input[type='number'] {
   width: 100%;
-  padding: 10px 12px;
+  padding: 8px 12px;
   border: 1px solid #d1d5db;
   border-radius: 6px;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   background: var(--s2);
   color: var(--tx);
   outline: none;
   font-family: inherit;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  min-height: 40px;
+  min-height: 36px;
 }
 
 input::placeholder {
@@ -159,7 +159,7 @@ input:focus {
 }
 
 .field {
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 /* Botones */
@@ -188,10 +188,12 @@ input:focus {
   background: var(--ac);
   color: #ffffff;
   width: 100%;
-  padding: 12px 20px;
+  padding: 10px 16px;
   border: none;
   border-radius: 6px;
   font-weight: 500;
+  margin-top: 8px;
+  min-height: 40px;
 }
 
 .btn-primary:hover:not(:disabled),
@@ -241,7 +243,7 @@ input:focus {
   padding: 10px 12px;
   border-radius: 8px;
   font-size: 0.85rem;
-  margin-top: 12px;
+  margin-top: 10px;
 }
 
 .alert-success {
@@ -287,7 +289,7 @@ table {
 
 thead th {
   text-align: left;
-  padding: 12px 16px;
+  padding: 10px 14px;
   font-weight: 500;
   color: var(--tm);
   background: var(--s2);
@@ -300,7 +302,7 @@ thead th {
 
 tbody td,
 tfoot td {
-  padding: 12px 16px;
+  padding: 10px 14px;
   border-top: 1px solid var(--br);
   color: var(--tx);
 }
@@ -400,10 +402,10 @@ tfoot td {
   border: 1px solid var(--br);
   background: var(--s1);
   border-radius: 8px;
-  padding: 12px 16px;
-  margin-bottom: 10px;
+  padding: 8px 12px;
+  margin-bottom: 6px;
   transition: border-color 0.2s;
-  gap: 12px;
+  gap: 10px;
 }
 
 .part-row:hover {
@@ -414,7 +416,7 @@ tfoot td {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .part-row-header span {
@@ -489,15 +491,15 @@ tfoot td {
 
 /* Input de Precio dentro de Part Row */
 .part-row > div:last-child .bid-price {
-  width: 100px;
-  max-width: 120px;
+  width: 90px;
+  max-width: 110px;
   background: var(--s2);
   color: var(--tx);
   border: 1px solid #d1d5db;
   border-radius: 4px;
-  padding: 6px 10px;
-  font-size: 0.95rem;
-  min-height: 36px;
+  padding: 6px 8px;
+  font-size: 0.9rem;
+  min-height: 32px;
   text-align: right;
   transition: border-color 0.15s, box-shadow 0.15s;
 }

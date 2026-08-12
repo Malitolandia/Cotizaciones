@@ -75,7 +75,7 @@ quoteImageInput.addEventListener('change', async () => {
 quoteRemoveImageBtn.addEventListener('click', () => setQuoteImage(''));
 
 // ---------------------------------------------------------------------
-// Formulario dinámico de repuestos
+// Formulario dinámico de repuestos (SOLO nombre + cantidad + foto)
 // ---------------------------------------------------------------------
 const partsList = document.getElementById('parts-list');
 
@@ -92,14 +92,9 @@ function addPartRow() {
     </div>
     <div class="part-with-image">
       <div class="part-fields">
-        <div class="grid-3">
+        <div class="grid-2">
           <input type="text" class="part-name" list="parts-catalog" placeholder="Nombre del repuesto *" required />
-          <input type="text" class="part-code" placeholder="Código / referencia" />
           <input type="number" class="part-quantity" placeholder="Cantidad" min="1" step="1" value="1" />
-        </div>
-        <div class="grid-2" style="margin-top:8px;">
-          <input type="text" class="part-unit" placeholder="Unidad (ej: unidad, par)" />
-          <input type="text" class="part-description" placeholder="Descripción / notas" />
         </div>
       </div>
       <div class="part-image-box">
@@ -203,12 +198,12 @@ createForm.addEventListener('submit', async (e) => {
   createErrorBox.innerHTML = '';
 
   const title = document.getElementById('title').value.trim();
-  const image = quoteImageData;  // <-- AGREGADO
+  const image = quoteImageData;
   const parts = Array.from(partsList.querySelectorAll('.part-row')).map((row) => ({
     name: row.querySelector('.part-name').value.trim(),
-    code: row.querySelector('.part-code').value.trim(),
-    unit: row.querySelector('.part-unit').value.trim(),
-    description: row.querySelector('.part-description').value.trim(),
+    code: '',          // eliminado
+    unit: '',          // eliminado
+    description: '',   // eliminado
     quantity: row.querySelector('.part-quantity').value.trim() || '1',
     image: row.dataset.image || '',
   })).filter((p) => p.name.length > 0);
@@ -229,7 +224,7 @@ createForm.addEventListener('submit', async (e) => {
     const res = await fetch('/api/quotes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, parts, image }),  // <-- incluir image
+      body: JSON.stringify({ title, parts, image }),
     });
     const data = await res.json();
 
@@ -242,7 +237,7 @@ createForm.addEventListener('submit', async (e) => {
       '<div class="alert-success">✅ Cotización creada. Copia el enlace de abajo y envíalo a tus proveedores.</div>';
 
     createForm.reset();
-    setQuoteImage('');  // <-- limpiar imagen
+    setQuoteImage('');
     partsList.innerHTML = '';
     partKeyCounter = 0;
     addPartRow();

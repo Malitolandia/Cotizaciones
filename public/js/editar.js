@@ -72,7 +72,6 @@ function setupEditQuoteImage() {
 
   removeBtn.addEventListener('click', () => setImage(''));
 
-  // Inicializar con la imagen existente si la hay
   const initialImage = thumb.src;
   if (initialImage && initialImage.length > 0) {
     editQuoteImageData = initialImage;
@@ -107,6 +106,7 @@ async function loadPartCatalog() {
   }
 }
 
+// ---------- Fila de repuesto en edición (SOLO nombre + cantidad + foto) ----------
 function partRowHtml(part) {
   const key = partKeyCounter++;
   const removable = !part || !part.hasBids;
@@ -119,14 +119,9 @@ function partRowHtml(part) {
       </div>
       <div class="part-with-image">
         <div class="part-fields">
-          <div class="grid-3">
+          <div class="grid-2">
             <input type="text" class="part-name" list="parts-catalog" placeholder="Nombre del repuesto *" required value="${escapeHtml(part ? part.name : '')}" />
-            <input type="text" class="part-code" placeholder="Código / referencia" value="${escapeHtml(part ? part.code : '')}" />
             <input type="number" class="part-quantity" placeholder="Cantidad" min="1" step="1" value="${part ? part.quantity : 1}" />
-          </div>
-          <div class="grid-2" style="margin-top:8px;">
-            <input type="text" class="part-unit" placeholder="Unidad" value="${escapeHtml(part ? part.unit : '')}" />
-            <input type="text" class="part-description" placeholder="Descripción / notas" value="${escapeHtml(part ? part.description : '')}" />
           </div>
         </div>
         <div class="part-image-box">
@@ -219,7 +214,6 @@ async function init() {
 }
 
 function render(data) {
-  // Construir el HTML incluyendo el campo de imagen de la cotización
   const imageHtml = createQuoteImageHTML(data.image || '');
 
   app.innerHTML = `
@@ -231,7 +225,7 @@ function render(data) {
         <input id="title" type="text" required value="${escapeHtml(data.title)}" />
       </div>
 
-      ${imageHtml}   <!-- <-- AGREGADO -->
+      ${imageHtml}
 
       <div style="margin-top: 20px;">
         <div class="row-between" style="margin-bottom: 8px;">
@@ -250,7 +244,6 @@ function render(data) {
     </form>
   `;
 
-  // Configurar el manejo de la imagen de la cotización
   setupEditQuoteImage();
 
   const partsList = document.getElementById('parts-list');
@@ -274,13 +267,13 @@ function render(data) {
     blockedBox.innerHTML = '';
 
     const title = document.getElementById('title').value.trim();
-    const image = editQuoteImageData;  // <-- AGREGADO
+    const image = editQuoteImageData;
     const parts = Array.from(partsList.querySelectorAll('.part-row')).map((row) => ({
       id: row.dataset.partId || undefined,
       name: row.querySelector('.part-name').value.trim(),
-      code: row.querySelector('.part-code').value.trim(),
-      unit: row.querySelector('.part-unit').value.trim(),
-      description: row.querySelector('.part-description').value.trim(),
+      code: '',          // eliminado
+      unit: '',          // eliminado
+      description: '',   // eliminado
       quantity: row.querySelector('.part-quantity').value.trim() || '1',
       image: row.dataset.image || '',
     })).filter((p) => p.name.length > 0);
@@ -301,7 +294,7 @@ function render(data) {
       const res = await fetch(`/api/quote-edit?uuid=${encodeURIComponent(uuid)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, parts, removedPartIds, image }),  // <-- incluir image
+        body: JSON.stringify({ title, parts, removedPartIds, image }),
       });
       const result = await res.json();
 

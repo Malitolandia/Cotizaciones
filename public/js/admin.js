@@ -201,9 +201,9 @@ createForm.addEventListener('submit', async (e) => {
   const image = quoteImageData;
   const parts = Array.from(partsList.querySelectorAll('.part-row')).map((row) => ({
     name: row.querySelector('.part-name').value.trim(),
-    code: '',          // eliminado
-    unit: '',          // eliminado
-    description: '',   // eliminado
+    code: '',
+    unit: '',
+    description: '',
     quantity: row.querySelector('.part-quantity').value.trim() || '1',
     image: row.dataset.image || '',
   })).filter((p) => p.name.length > 0);
@@ -253,7 +253,7 @@ createForm.addEventListener('submit', async (e) => {
 });
 
 // ---------------------------------------------------------------------
-// Listado de cotizaciones
+// Listado de cotizaciones (con botón Eliminar)
 // ---------------------------------------------------------------------
 const quotesListEl = document.getElementById('quotes-list');
 
@@ -307,6 +307,7 @@ function renderQuotes(quotes) {
           <div class="row-between" style="margin-top: 10px;">
             <button class="btn-secondary copy-btn" data-link="${link}">🔗 Copiar enlace</button>
             <button class="btn-secondary toggle-btn" data-uuid="${q.uuid}" data-status="${q.status}">${toggleLabel}</button>
+            <button class="btn-secondary delete-btn" data-uuid="${q.uuid}" style="color: #ef4444; border-color: #ef4444;">🗑️ Eliminar</button>
           </div>
         </div>
       `;
@@ -314,7 +315,9 @@ function renderQuotes(quotes) {
     .join('');
 }
 
+// Eventos de los botones (copiar, toggle, eliminar)
 quotesListEl.addEventListener('click', async (e) => {
+  // Copiar enlace
   if (e.target.matches('.copy-btn')) {
     const link = e.target.dataset.link;
     try {
@@ -327,6 +330,7 @@ quotesListEl.addEventListener('click', async (e) => {
     }
   }
 
+  // Cambiar estado (abrir/cerrar)
   if (e.target.matches('.toggle-btn')) {
     const uuid = e.target.dataset.uuid;
     const current = e.target.dataset.status;
@@ -339,6 +343,33 @@ quotesListEl.addEventListener('click', async (e) => {
         body: JSON.stringify({ uuid, status: next }),
       });
       await loadQuotes();
+    } finally {
+      e.target.disabled = false;
+    }
+  }
+
+  // Eliminar cotización
+  if (e.target.matches('.delete-btn')) {
+    const uuid = e.target.dataset.uuid;
+    const confirmDelete = confirm('¿Estás seguro de eliminar esta cotización? Se borrarán todos los datos asociados (repuestos, proveedores, precios y ganadores). Esta acción no se puede deshacer.');
+    if (!confirmDelete) return;
+
+    e.target.disabled = true;
+    e.target.textContent = 'Eliminando…';
+
+    try {
+      const res = await fetch(`/api/quotes?uuid=${encodeURIComponent(uuid)}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Error al eliminar');
+        return;
+      }
+      // Recargar la lista
+      await loadQuotes();
+    } catch (err) {
+      alert('Error de conexión. Intenta de nuevo.');
     } finally {
       e.target.disabled = false;
     }

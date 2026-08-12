@@ -4,6 +4,7 @@
 const crypto = require('crypto');
 const { getRows, appendRow, appendRows, updateRow, deleteRow, ensureReady } = require('./_lib/sheets');
 const { notifyNewBid } = require('./_lib/notify');
+const { requireAuth } = require('./_lib/auth'); // <-- IMPORTADO
 
 // ============================================================
 // Utilidades
@@ -135,7 +136,6 @@ module.exports = async (req, res) => {
           found: true,
           company: match.company,
           phone: match.phone,
-          // Devolvemos también el supplierId si existe? No lo necesitamos aquí.
         });
       } else {
         res.status(200).json({ found: false });
@@ -172,15 +172,12 @@ module.exports = async (req, res) => {
 
       let supplierId;
       if (existing) {
-        // Si ya existe, usamos ese supplierId
         supplierId = existing.id;
-        // Opcional: actualizar empresa por si cambió
         if (existing.company !== cleanCompany) {
           const { _row, ...rest } = existing;
           await updateRow('Suppliers', _row, { ...rest, company: cleanCompany });
         }
       } else {
-        // Si no existe, lo creamos
         supplierId = crypto.randomUUID();
         await appendRow('Suppliers', {
           id: supplierId,
@@ -237,11 +234,12 @@ module.exports = async (req, res) => {
     }
 
     // ============================================================
-    // RUTAS ADMINISTRATIVAS (sin autenticación)
+    // RUTAS ADMINISTRATIVAS (con autenticación)
     // ============================================================
 
     // GET /api/quotes (listar todas)
     if (url === '/api/quotes' && method === 'GET') {
+      if (!requireAuth(req, res)) return;
       const quotes = await getRows('Quotes');
       quotes.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
       res.status(200).json({ quotes });
@@ -250,6 +248,7 @@ module.exports = async (req, res) => {
 
     // POST /api/quotes (crear)
     if (url === '/api/quotes' && method === 'POST') {
+      if (!requireAuth(req, res)) return;
       const { title, parts, image } = body;
       const cleanTitle = (title || '').trim();
       const cleanImage = typeof image === 'string' ? image.slice(0, 45000) : '';
@@ -291,8 +290,66 @@ module.exports = async (req, res) => {
       return;
     }
 
+    // DELETE /api/quotes (eliminar cotización completa)
+    if (url === '/api/quotes' && method === 'DELETE') {
+      if (!requireAuth(req, res)) return;
+      const uuid = query.uuid;
+      if (!uuid) {
+        res.status(400).json({ error: 'Falta el parámetro uuid' });
+        return;
+      }
+
+      // Obtener todos los datos relacionados
+      const [quotes, parts, suppliers, bids, winners] = await Promise.all([
+        getRows('Quotes'),
+        getRows('Parts'),
+        getRows('Suppliers'),
+        getRows('Bids'),
+        getRows('Winners'),
+      ]);
+
+      const quote = quotes.find(q => q.uuid === uuid);
+      if (!quote) {
+        res.status(404).json({ error: 'Cotización no encontrada' });
+        return;
+      }
+
+      // Obtener IDs de partes y suppliers para filtrar bids/winners
+      const partIds = parts.filter(p => p.quote_uuid === uuid).map(p => p.id);
+      const supplierIds = suppliers.filter(s => s.quote_uuid === uuid).map(s => s.id);
+
+      // Eliminar winners (tienen quote_uuid)
+      const winnersToDelete = winners.filter(w => w.quote_uuid === uuid);
+      for (const w of winnersToDelete) {
+        await deleteRow('Winners', w._row);
+      }
+
+      // Eliminar bids (filtramos por supplier_id)
+      const bidsToDelete = bids.filter(b => supplierIds.includes(b.supplier_id));
+      for (const b of bidsToDelete) {
+        await deleteRow('Bids', b._row);
+      }
+
+      // Eliminar suppliers
+      for (const s of suppliers.filter(s => s.quote_uuid === uuid)) {
+        await deleteRow('Suppliers', s._row);
+      }
+
+      // Eliminar parts
+      for (const p of parts.filter(p => p.quote_uuid === uuid)) {
+        await deleteRow('Parts', p._row);
+      }
+
+      // Finalmente eliminar la cotización
+      await deleteRow('Quotes', quote._row);
+
+      res.status(200).json({ ok: true });
+      return;
+    }
+
     // GET /api/part-catalog
     if (url === '/api/part-catalog' && method === 'GET') {
+      if (!requireAuth(req, res)) return;
       const parts = await getRows('Parts');
       const seen = new Map();
       for (const p of parts) {
@@ -310,6 +367,7 @@ module.exports = async (req, res) => {
 
     // GET /api/search-parts
     if (url === '/api/search-parts' && method === 'GET') {
+      if (!requireAuth(req, res)) return;
       const q = normalize(query.q || '');
       if (q.length < 2) {
         res.status(200).json({ results: [], lowest: null });
@@ -379,6 +437,7 @@ module.exports = async (req, res) => {
 
     // GET /api/supplier-stats
     if (url === '/api/supplier-stats' && method === 'GET') {
+      if (!requireAuth(req, res)) return;
       const [suppliers, bids, parts, winners] = await Promise.all([
         getRows('Suppliers'),
         getRows('Bids'),
@@ -449,6 +508,7 @@ module.exports = async (req, res) => {
 
     // GET /api/results
     if (url === '/api/results' && method === 'GET') {
+      if (!requireAuth(req, res)) return;
       const uuid = query.uuid;
       if (!uuid) {
         res.status(400).json({ error: 'Falta el parámetro uuid' });
@@ -501,6 +561,7 @@ module.exports = async (req, res) => {
 
     // GET /api/quote-edit (carga para editar)
     if (url === '/api/quote-edit' && method === 'GET') {
+      if (!requireAuth(req, res)) return;
       const uuid = query.uuid;
       if (!uuid) {
         res.status(400).json({ error: 'Falta el parámetro uuid' });
@@ -541,6 +602,7 @@ module.exports = async (req, res) => {
 
     // POST /api/quote-edit (guardar cambios)
     if (url === '/api/quote-edit' && method === 'POST') {
+      if (!requireAuth(req, res)) return;
       const uuid = query.uuid || body.uuid;
       if (!uuid) {
         res.status(400).json({ error: 'Falta el parámetro uuid' });
@@ -636,6 +698,7 @@ module.exports = async (req, res) => {
 
     // POST /api/quote-status
     if (url === '/api/quote-status' && method === 'POST') {
+      if (!requireAuth(req, res)) return;
       const { uuid, status } = body;
       if (!uuid || !['ACTIVE', 'CLOSED'].includes(status)) {
         res.status(400).json({ error: 'Parámetros inválidos' });
@@ -655,6 +718,7 @@ module.exports = async (req, res) => {
 
     // POST /api/set-winner
     if (url === '/api/set-winner' && method === 'POST') {
+      if (!requireAuth(req, res)) return;
       const { quoteUuid, partId, supplierId } = body;
       if (!quoteUuid || !partId) {
         res.status(400).json({ error: 'Parámetros inválidos' });

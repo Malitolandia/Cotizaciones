@@ -1,3 +1,4 @@
+// public/js/admin.js
 let partKeyCounter = 0;
 
 function escapeHtml(str) {
@@ -34,7 +35,7 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
 });
 
 // ---------------------------------------------------------------------
-// Manejo de imagen de la cotización
+// Manejo de imagen de la cotización (principal)
 // ---------------------------------------------------------------------
 const quoteImageInput = document.getElementById('quote-image-input');
 const quoteImageThumb = document.getElementById('quote-image-thumb');
@@ -75,7 +76,7 @@ quoteImageInput.addEventListener('change', async () => {
 quoteRemoveImageBtn.addEventListener('click', () => setQuoteImage(''));
 
 // ---------------------------------------------------------------------
-// Formulario dinámico de repuestos (SOLO nombre + cantidad + foto)
+// Formulario dinámico de repuestos (SOLO nombre + cantidad)
 // ---------------------------------------------------------------------
 const partsList = document.getElementById('parts-list');
 
@@ -84,71 +85,18 @@ function addPartRow() {
   const row = document.createElement('div');
   row.className = 'part-row';
   row.dataset.key = key;
-  row.dataset.image = '';
   row.innerHTML = `
     <div class="part-row-header">
       <span>Repuesto</span>
       <button type="button" class="remove-link" data-remove="${key}">Quitar</button>
     </div>
-    <div class="part-with-image">
-      <div class="part-fields">
-        <div class="grid-2">
-          <input type="text" class="part-name" list="parts-catalog" placeholder="Nombre del repuesto *" required />
-          <input type="number" class="part-quantity" placeholder="Cantidad" min="1" step="1" value="1" />
-        </div>
-      </div>
-      <div class="part-image-box">
-        <label class="image-upload-label">
-          <input type="file" class="part-image-input" accept="image/jpeg,image/png" hidden />
-          <span class="image-upload-placeholder">📷<br>Foto</span>
-          <img class="image-thumb" style="display:none;" alt="Foto del repuesto" />
-        </label>
-        <button type="button" class="remove-image-link" style="display:none;">Quitar foto</button>
-      </div>
+    <div class="grid-2" style="margin-top:4px;">
+      <input type="text" class="part-name" list="parts-catalog" placeholder="Nombre del repuesto *" required />
+      <input type="number" class="part-quantity" placeholder="Cantidad" min="1" step="1" value="1" />
     </div>
   `;
   partsList.appendChild(row);
-  attachImageHandlers(row);
   updateRemoveButtons();
-}
-
-function attachImageHandlers(row) {
-  const fileInput = row.querySelector('.part-image-input');
-  const thumb = row.querySelector('.image-thumb');
-  const placeholder = row.querySelector('.image-upload-placeholder');
-  const removeBtn = row.querySelector('.remove-image-link');
-
-  function setImage(dataUrl) {
-    row.dataset.image = dataUrl || '';
-    if (dataUrl) {
-      thumb.src = dataUrl;
-      thumb.style.display = 'block';
-      placeholder.style.display = 'none';
-      removeBtn.style.display = 'inline';
-    } else {
-      thumb.src = '';
-      thumb.style.display = 'none';
-      placeholder.style.display = 'block';
-      removeBtn.style.display = 'none';
-    }
-  }
-
-  fileInput.addEventListener('change', async () => {
-    const file = fileInput.files[0];
-    if (!file) return;
-    placeholder.textContent = 'Procesando…';
-    try {
-      const compressed = await compressImageFile(file);
-      setImage(compressed);
-    } catch (err) {
-      alert(err.message || 'No se pudo procesar la imagen.');
-    } finally {
-      placeholder.innerHTML = '📷<br>Foto';
-      fileInput.value = '';
-    }
-  });
-
-  removeBtn.addEventListener('click', () => setImage(''));
 }
 
 function updateRemoveButtons() {
@@ -182,7 +130,7 @@ async function loadPartCatalog() {
       .map((p) => `<option value="${escapeHtml(p.name)}"></option>`)
       .join('');
   } catch {
-    // Autocompletado es un plus, si falla no bloqueamos nada
+    // silencioso
   }
 }
 
@@ -205,7 +153,7 @@ createForm.addEventListener('submit', async (e) => {
     unit: '',
     description: '',
     quantity: row.querySelector('.part-quantity').value.trim() || '1',
-    image: row.dataset.image || '',
+    image: '', // ya no se envía imagen por repuesto
   })).filter((p) => p.name.length > 0);
 
   if (!title) {
@@ -253,7 +201,7 @@ createForm.addEventListener('submit', async (e) => {
 });
 
 // ---------------------------------------------------------------------
-// Listado de cotizaciones (con botón Eliminar)
+// Listado de cotizaciones
 // ---------------------------------------------------------------------
 const quotesListEl = document.getElementById('quotes-list');
 
@@ -317,7 +265,6 @@ function renderQuotes(quotes) {
 
 // Eventos de los botones (copiar, toggle, eliminar)
 quotesListEl.addEventListener('click', async (e) => {
-  // Copiar enlace
   if (e.target.matches('.copy-btn')) {
     const link = e.target.dataset.link;
     try {
@@ -330,7 +277,6 @@ quotesListEl.addEventListener('click', async (e) => {
     }
   }
 
-  // Cambiar estado (abrir/cerrar)
   if (e.target.matches('.toggle-btn')) {
     const uuid = e.target.dataset.uuid;
     const current = e.target.dataset.status;
@@ -348,10 +294,9 @@ quotesListEl.addEventListener('click', async (e) => {
     }
   }
 
-  // Eliminar cotización
   if (e.target.matches('.delete-btn')) {
     const uuid = e.target.dataset.uuid;
-    const confirmDelete = confirm('¿Estás seguro de eliminar esta cotización? Se borrarán todos los datos asociados (repuestos, proveedores, precios y ganadores). Esta acción no se puede deshacer.');
+    const confirmDelete = confirm('¿Estás seguro de eliminar esta cotización? Se borrarán todos los datos asociados. Esta acción no se puede deshacer.');
     if (!confirmDelete) return;
 
     e.target.disabled = true;
@@ -366,7 +311,6 @@ quotesListEl.addEventListener('click', async (e) => {
         alert(data.error || 'Error al eliminar');
         return;
       }
-      // Recargar la lista
       await loadQuotes();
     } catch (err) {
       alert('Error de conexión. Intenta de nuevo.');

@@ -248,14 +248,14 @@ function renderQuotes(quotes) {
             </div>
             <div>
               <a href="/results.html?uuid=${q.uuid}" class="btn btn-secondary">Ver resultados</a>
-              <a href="/editar.html?uuid=${q.uuid}" class="btn-secondary" style="margin-top:6px; display:inline-flex;">✏️ Editar</a>
+              <a href="/editar.html?uuid=${q.uuid}" class="btn btn-secondary" style="margin-top:6px; display:inline-flex;">✏️ Editar</a>
             </div>
           </div>
           <div class="link-box">${link}</div>
           <div class="row-between" style="margin-top: 10px;">
-            <button class="btn-secondary copy-btn" data-link="${link}">🔗 Copiar enlace</button>
-            <button class="btn-secondary toggle-btn" data-uuid="${q.uuid}" data-status="${q.status}">${toggleLabel}</button>
-            <button class="btn-secondary delete-btn" data-uuid="${q.uuid}" style="color: #ef4444; border-color: #ef4444;">🗑️ Eliminar</button>
+            <button class="btn btn-secondary copy-btn" data-link="${link}">🔗 Copiar enlace</button>
+            <button class="btn btn-secondary toggle-btn" data-uuid="${q.uuid}" data-status="${q.status}">${toggleLabel}</button>
+            <button class="btn btn-secondary delete-btn" data-uuid="${q.uuid}" style="color: #ef4444; border-color: #ef4444;">🗑️ Eliminar</button>
           </div>
         </div>
       `;

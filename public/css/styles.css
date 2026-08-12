@@ -132,7 +132,6 @@ p.subtitle {
   margin-bottom: 5px;
 }
 
-/* ----- INPUTS GENERALES (compactos, sin exagerar) ----- */
 input[type='text'],
 input[type='password'],
 input[type='tel'],
@@ -162,7 +161,6 @@ input:focus {
   box-shadow: 0 0 0 3px rgba(0, 229, 160, 0.12);
 }
 
-/* ----- CAMPO DE PRECIO (fondo claro, tamaño proporcionado, a la derecha) ----- */
 .part-row {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -180,7 +178,6 @@ input:focus {
   border-color: #2a3048;
 }
 
-/* Eliminamos el contenedor interno para que los hijos sean directos */
 .part-row > .part-with-image {
   display: contents;
 }
@@ -193,7 +190,6 @@ input:focus {
   grid-column: 1;
 }
 
-/* El contenedor del precio (segundo hijo directo) */
 .part-row > div:last-child {
   grid-column: 2;
   grid-row: 1 / span 2;
@@ -203,7 +199,6 @@ input:focus {
   justify-content: flex-end;
 }
 
-/* Input de precio: fondo claro, tamaño justo, texto oscuro */
 .part-row > div:last-child .bid-price {
   width: 110px;
   max-width: 140px;
@@ -236,7 +231,6 @@ input:focus {
   background: #e8f5f0;
 }
 
-/* ----- RESPONSIVE: en móviles, el precio se apila debajo ----- */
 @media (max-width: 600px) {
   .part-row {
     grid-template-columns: 1fr;
@@ -253,7 +247,6 @@ input:focus {
   }
 }
 
-/* ----- BOTÓN DE ENVÍO (compacto y elegante) ----- */
 #combined-submit,
 .btn-primary {
   background: var(--ac);
@@ -288,8 +281,6 @@ input:focus {
   cursor: not-allowed;
   transform: none;
 }
-
-/* ----- RESTO DE ESTILOS (sin cambios) ----- */
 
 .field {
   margin-bottom: 16px;
@@ -481,7 +472,6 @@ input:focus {
   padding: 24px 0;
 }
 
-/* --- Ganador por repuesto / lista de compra --- */
 .winner-btn {
   display: block;
   margin-top: 3px;
@@ -545,7 +535,6 @@ input:focus {
   flex-wrap: wrap;
 }
 
-/* --- Estadísticas de proveedores --- */
 .stats-table th,
 .stats-table td {
   padding: 9px 12px;
@@ -585,7 +574,6 @@ input:focus {
   width: 100%;
 }
 
-/* --- Imagen por repuesto --- */
 .part-with-image {
   display: flex;
   gap: 12px;
@@ -667,7 +655,6 @@ input:focus {
   }
 }
 
-/* --- Estilos para la imagen de la cotización y modal de zoom --- */
 .quote-image-box {
   display: flex;
   align-items: center;
@@ -693,7 +680,6 @@ input:focus {
   filter: brightness(1.05);
 }
 
-/* Modal de zoom */
 #image-modal {
   display: none;
   position: fixed;
@@ -716,7 +702,6 @@ input:focus {
   object-fit: contain;
 }
 
-/* --- Scrollbar --- */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -731,144 +716,194 @@ input:focus {
   border-radius: 3px;
 }
 
+/* =======================================================================================
+   NUEVO TEMA CLARO ESTILO "VERCEL" PARA EL FORMULARIO DE COTIZACIÓN (Listo para usar)
+   Simplemente agrega la clase "vercel-theme" a tu div que contiene el formulario
+   ======================================================================================= */
 
-/* ==============================================================================
-   ESTILOS DE TABLA REESCRITOS POR COMPLETO PARA SEGUIR LA REFERENCIA DE VERCEL
-   (Fondo blanco, padding de 16px, colores claros, tipografía limpia)
-   ============================================================================== */
-
-/* Configuración base de la tabla */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* Eliminamos fuentes exageradas */
-  font-size: 14px;
-  background: #ffffff; /* Quitamos fondo oscuro */
-  border: 1px solid #eaeaea; /* Borde gris claro exacto */
+.vercel-theme {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: #ffffff;
+  border: 1px solid #eaeaea;
   border-radius: 8px;
-  min-width: auto; /* Eliminamos el width forzado de 560px */
-  overflow: hidden;
+  padding: 24px;
+  color: #111111 !important;
 }
 
-/* Encabezados (Thead) */
-thead th {
-  text-align: left;
-  padding: 14px 16px; /* Padding compacto exacto */
-  font-weight: 500;
-  font-size: 14px;
-  color: #111111;
-  background: #ffffff;
-  border-bottom: 1px solid #eaeaea;
-  text-transform: none; /* Eliminamos mayúsculas */
+.vercel-theme h1,
+.vercel-theme h2 {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-weight: 600;
+  text-transform: none;
   letter-spacing: normal;
-  position: static;
+  color: #111111 !important;
+  margin: 0 0 16px 0;
 }
 
-/* Filas del cuerpo (Tbody) */
-tbody tr {
-  border-bottom: 1px solid #f3f4f6; /* Línea divisoria sutil */
-  background: #ffffff;
-}
-tbody tr:last-child {
-  border-bottom: none;
-}
-tbody tr:hover {
-  background: #fafafa; /* Hover gris muy claro como en la imagen */
+.vercel-theme h2 {
+  font-size: 1.2rem;
+  margin-bottom: 6px;
 }
 
-/* Celdas (Td y Tfoot) */
-tbody td,
-tfoot td {
-  padding: 16px 16px; /* Espaciado exacto de 16px, nada de márgenes exagerados */
-  border-top: none;
-  color: #111111;
-  background: transparent;
-  vertical-align: middle;
+.vercel-theme p.subtitle {
+  color: #6b7280 !important;
+  font-size: 0.9rem;
+  margin: 0 0 16px 0;
 }
 
-/* Forzamos a que los colores de la tabla no hereden las variables oscuras */
-tbody td a,
-tfoot td a {
-  color: #111111;
-}
-
-
-/* ==============================================================================
-   CLASES AUXILIARES PARA EL CONTENIDO DE LAS CELDAS (Estados, Badges, Ramas)
-   Aplica estas clases a los elementos dentro de tu <td> para replicar el diseño
-   ============================================================================== */
-
-/* Columna de estado (Ready + tiempo) */
-.vercel-status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.vercel-dot-ready {
-  width: 8px;
-  height: 8px;
-  background: #10b981; /* Punto verde exacto */
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.vercel-status-text {
+.vercel-theme label {
+  display: block;
+  font-size: 0.85rem;
   font-weight: 500;
-  color: #111;
-}
-.vercel-status-time {
-  color: #6b7280;
+  text-transform: none;
+  letter-spacing: normal;
+  color: #4b5563;
+  margin-bottom: 6px;
 }
 
-/* Badge de Entorno (Production) */
-.vercel-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: #f3f4f6;
-  color: #4b5563;
-  border-radius: 999px;
-  padding: 2px 10px 2px 8px;
-  font-size: 13px;
-  border: 1px solid transparent;
-}
-.vercel-badge.active {
-  background: #eff6ff;
-  color: #2563eb;
-  font-weight: 500;
-}
-.vercel-badge .shield-icon {
-  font-size: 12px;
+.vercel-theme input[type='text'],
+.vercel-theme input[type='password'],
+.vercel-theme input[type='tel'],
+.vercel-theme input[type='email'],
+.vercel-theme input[type='number'] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  background: #f9fafb;
+  color: #111111;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  min-height: 40px;
+  box-sizing: border-box;
 }
 
-/* Columna de Rama (Git Hash + main) */
-.vercel-branch {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: #4b5563;
-}
-.vercel-branch .branch-hash {
-  font-family: monospace;
-  color: #111;
-}
-.vercel-branch .branch-icon {
+.vercel-theme input::placeholder {
   color: #9ca3af;
 }
 
-/* Columna de tiempo (Alineada a la derecha) */
-.vercel-time {
-  text-align: right;
+.vercel-theme input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.vercel-theme hr {
+  border: none;
+  border-top: 1px solid #eaeaea;
+  margin: 20px 0;
+}
+
+.vercel-theme .part-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #eaeaea;
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  transition: border-color 0.2s;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  grid-template-columns: none;
+  gap: 8px;
+}
+
+.vercel-theme .part-row:hover {
+  border-color: #d1d5db;
+}
+
+.vercel-theme .part-row .part-fields h4 {
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #111111;
+  margin: 0 0 2px 0;
+}
+
+.vercel-theme .part-row .part-fields span {
+  display: block;
+  font-size: 0.8rem;
   color: #6b7280;
 }
 
-/* Columna de acciones (3 puntitos) */
-.vercel-actions {
-  text-align: right;
-  color: #6b7280;
-  cursor: pointer;
-  font-size: 18px;
-  letter-spacing: 2px;
+.vercel-theme .part-row > div:last-child {
+  margin-top: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
-.vercel-actions:hover {
-  color: #111;
+
+.vercel-theme .part-row > div:last-child .bid-price {
+  width: 100px;
+  max-width: 120px;
+  background: #f9fafb;
+  color: #111111;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 0.95rem;
+  font-weight: 400;
+  min-height: 36px;
+  text-align: right;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.vercel-theme .part-row > div:last-child .bid-price:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  outline: none;
+}
+
+.vercel-theme .part-row > div:last-child .bid-price:not(:placeholder-shown) {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.vercel-theme #combined-submit,
+.vercel-theme .btn-primary {
+  background: #111111 !important;
+  color: #ffffff !important;
+  width: 100%;
+  padding: 12px 20px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 48px;
+  letter-spacing: normal;
+  margin-top: 12px;
+}
+
+.vercel-theme #combined-submit:hover:not(:disabled),
+.vercel-theme .btn-primary:hover:not(:disabled) {
+  background: #000000 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.vercel-theme #combined-submit:disabled,
+.vercel-theme .btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@media (max-width: 600px) {
+  .vercel-theme .part-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .vercel-theme .part-row > div:last-child {
+    justify-content: stretch;
+  }
+  .vercel-theme .part-row > div:last-child .bid-price {
+    width: 100%;
+    max-width: 100%;
+    text-align: center;
+  }
 }

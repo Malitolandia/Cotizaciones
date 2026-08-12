@@ -14,6 +14,71 @@ const uuid = new URLSearchParams(window.location.search).get('uuid');
 let partKeyCounter = 0;
 const removedPartIds = [];
 
+// --- Manejo de imagen de la cotización en edición ---
+let editQuoteImageData = '';
+
+function createQuoteImageHTML(existingImage) {
+  const hasImage = existingImage && existingImage.length > 0;
+  return `
+    <div class="field" style="margin-top: 12px;">
+      <label class="label">Imagen de la cotización (opcional)</label>
+      <div class="quote-image-box">
+        <label class="image-upload-label" id="edit-quote-image-label">
+          <input type="file" id="edit-quote-image-input" accept="image/jpeg,image/png" hidden />
+          <span class="image-upload-placeholder" id="edit-quote-image-placeholder" style="${hasImage ? 'display:none;' : ''}">📷<br>Subir imagen</span>
+          <img class="image-thumb" id="edit-quote-image-thumb" style="${hasImage ? '' : 'display:none;'}" src="${escapeHtml(existingImage || '')}" alt="Imagen de la cotización" />
+        </label>
+        <button type="button" id="edit-quote-remove-image" class="remove-image-link" style="${hasImage ? '' : 'display:none;'}">Quitar imagen</button>
+      </div>
+    </div>
+  `;
+}
+
+function setupEditQuoteImage() {
+  const input = document.getElementById('edit-quote-image-input');
+  const thumb = document.getElementById('edit-quote-image-thumb');
+  const placeholder = document.getElementById('edit-quote-image-placeholder');
+  const removeBtn = document.getElementById('edit-quote-remove-image');
+
+  function setImage(dataUrl) {
+    editQuoteImageData = dataUrl || '';
+    if (dataUrl) {
+      thumb.src = dataUrl;
+      thumb.style.display = 'block';
+      placeholder.style.display = 'none';
+      removeBtn.style.display = 'inline';
+    } else {
+      thumb.src = '';
+      thumb.style.display = 'none';
+      placeholder.style.display = 'block';
+      removeBtn.style.display = 'none';
+    }
+  }
+
+  input.addEventListener('change', async () => {
+    const file = input.files[0];
+    if (!file) return;
+    placeholder.textContent = 'Procesando…';
+    try {
+      const compressed = await compressImageFile(file);
+      setImage(compressed);
+    } catch (err) {
+      alert(err.message || 'No se pudo procesar la imagen.');
+    } finally {
+      placeholder.innerHTML = '📷<br>Subir imagen';
+      input.value = '';
+    }
+  });
+
+  removeBtn.addEventListener('click', () => setImage(''));
+
+  // Inicializar con la imagen existente si la hay
+  const initialImage = thumb.src;
+  if (initialImage && initialImage.length > 0) {
+    editQuoteImageData = initialImage;
+  }
+}
+
 async function checkSession() {
   try {
     const res = await fetch('/api/session');
@@ -154,6 +219,9 @@ async function init() {
 }
 
 function render(data) {
+  // Construir el HTML incluyendo el campo de imagen de la cotización
+  const imageHtml = createQuoteImageHTML(data.image || '');
+
   app.innerHTML = `
     <form id="edit-form" class="card">
       <h2>Editar cotización</h2>
@@ -162,6 +230,8 @@ function render(data) {
         <label class="label" for="title">Título</label>
         <input id="title" type="text" required value="${escapeHtml(data.title)}" />
       </div>
+
+      ${imageHtml}   <!-- <-- AGREGADO -->
 
       <div style="margin-top: 20px;">
         <div class="row-between" style="margin-bottom: 8px;">
@@ -179,6 +249,9 @@ function render(data) {
       <button type="submit" id="save-btn" class="btn btn-primary" style="margin-top:16px;">Guardar cambios</button>
     </form>
   `;
+
+  // Configurar el manejo de la imagen de la cotización
+  setupEditQuoteImage();
 
   const partsList = document.getElementById('parts-list');
   attachRemoveHandlers(partsList);
@@ -201,6 +274,7 @@ function render(data) {
     blockedBox.innerHTML = '';
 
     const title = document.getElementById('title').value.trim();
+    const image = editQuoteImageData;  // <-- AGREGADO
     const parts = Array.from(partsList.querySelectorAll('.part-row')).map((row) => ({
       id: row.dataset.partId || undefined,
       name: row.querySelector('.part-name').value.trim(),
@@ -227,7 +301,7 @@ function render(data) {
       const res = await fetch(`/api/quote-edit?uuid=${encodeURIComponent(uuid)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, parts, removedPartIds }),
+        body: JSON.stringify({ title, parts, removedPartIds, image }),  // <-- incluir image
       });
       const result = await res.json();
 

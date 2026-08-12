@@ -30,6 +30,19 @@
           placeholder="Ej: Repuestos suspensión Chevrolet Spark GT" />
       </div>
 
+      <!-- CAMPO DE IMAGEN DE LA COTIZACIÓN -->
+      <div class="field" style="margin-top: 12px;">
+        <label class="label">Imagen de la cotización (opcional)</label>
+        <div class="quote-image-box">
+          <label class="image-upload-label" id="quote-image-label">
+            <input type="file" id="quote-image-input" accept="image/jpeg,image/png" hidden />
+            <span class="image-upload-placeholder" id="quote-image-placeholder">📷<br>Subir imagen</span>
+            <img class="image-thumb" id="quote-image-thumb" style="display:none;" alt="Imagen de la cotización" />
+          </label>
+          <button type="button" id="quote-remove-image" class="remove-image-link" style="display:none;">Quitar imagen</button>
+        </div>
+      </div>
+
       <div style="margin-top: 20px;">
         <div class="row-between" style="margin-bottom: 8px;">
           <span class="label" style="margin-bottom: 0;">Repuestos</span>

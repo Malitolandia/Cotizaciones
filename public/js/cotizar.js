@@ -13,6 +13,35 @@ const uuid = new URLSearchParams(window.location.search).get('uuid');
 
 let quoteData = null;
 
+// ---------------------------------------------------------------------
+// Renderizado de la imagen con modal de zoom
+// ---------------------------------------------------------------------
+function renderQuoteImage(image) {
+  if (!image) return '';
+  return `
+    <div class="card" style="margin-bottom: 20px; text-align: center; cursor: pointer;" id="quote-image-card">
+      <img src="${image}" alt="Imagen de la cotización" style="max-width: 100%; max-height: 300px; border-radius: 8px;" />
+      <p class="muted" style="margin-top: 6px; font-size: 0.75rem;">Haz clic para ampliar</p>
+    </div>
+    <!-- Modal de zoom -->
+    <div id="image-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center; cursor:pointer;">
+      <img src="${image}" style="max-width:90%; max-height:90%; border-radius:12px; box-shadow:0 0 40px rgba(0,0,0,0.8);" />
+    </div>
+  `;
+}
+
+function setupImageZoom() {
+  const card = document.getElementById('quote-image-card');
+  const modal = document.getElementById('image-modal');
+  if (card && modal) {
+    card.addEventListener('click', () => { modal.style.display = 'flex'; });
+    modal.addEventListener('click', () => { modal.style.display = 'none'; });
+  }
+}
+
+// ---------------------------------------------------------------------
+// Render de cabecera
+// ---------------------------------------------------------------------
 function renderHeader(title) {
   return `
     <div style="text-align:center; margin-bottom: 20px;">
@@ -24,9 +53,14 @@ function renderHeader(title) {
   `;
 }
 
+// ---------------------------------------------------------------------
+// Paso 1: Registro del proveedor
+// ---------------------------------------------------------------------
 function renderRegisterStep() {
+  const imageHtml = renderQuoteImage(quoteData.image || '');
   app.innerHTML = `
     ${renderHeader(quoteData.title)}
+    ${imageHtml}
     <form id="register-form" class="card">
       <h2>Datos de tu empresa</h2>
       <p class="subtitle">Ingresa tus datos antes de cotizar los repuestos.</p>
@@ -49,6 +83,8 @@ function renderRegisterStep() {
       <button type="submit" id="register-submit" class="btn btn-primary">Continuar</button>
     </form>
   `;
+
+  setupImageZoom();
 
   const form = document.getElementById('register-form');
   const errorBox = document.getElementById('register-error');
@@ -88,7 +124,11 @@ function renderRegisterStep() {
   });
 }
 
+// ---------------------------------------------------------------------
+// Paso 2: Ingreso de precios
+// ---------------------------------------------------------------------
 function renderBidsStep(supplierId) {
+  const imageHtml = renderQuoteImage(quoteData.image || '');
   const partsHtml = quoteData.parts
     .map(
       (part) => `
@@ -123,6 +163,7 @@ function renderBidsStep(supplierId) {
 
   app.innerHTML = `
     ${renderHeader(quoteData.title)}
+    ${imageHtml}
     <form id="bids-form" class="card">
       <h2>Ingresa tus precios</h2>
       <p class="subtitle">Completa el precio para cada repuesto (deja en blanco si no manejas alguno).</p>
@@ -131,6 +172,8 @@ function renderBidsStep(supplierId) {
       <button type="submit" id="bids-submit" class="btn btn-primary" style="margin-top:8px;">Enviar cotización</button>
     </form>
   `;
+
+  setupImageZoom();
 
   const form = document.getElementById('bids-form');
   const errorBox = document.getElementById('bids-error');
@@ -174,6 +217,7 @@ function renderBidsStep(supplierId) {
 
       app.innerHTML = `
         ${renderHeader(quoteData.title)}
+        ${imageHtml}
         <div class="card text-center">
           <p style="font-size:1.8rem; margin:0;">✅</p>
           <h2 style="margin-top:8px;">¡Cotización enviada!</h2>
@@ -188,6 +232,9 @@ function renderBidsStep(supplierId) {
   });
 }
 
+// ---------------------------------------------------------------------
+// Inicialización
+// ---------------------------------------------------------------------
 async function init() {
   if (!uuid) {
     app.innerHTML = '<div class="card alert-error">Enlace inválido: falta el identificador de la cotización.</div>';
@@ -206,22 +253,28 @@ async function init() {
     quoteData = data;
 
     if (data.status === 'CLOSED') {
+      const imageHtml = renderQuoteImage(data.image || '');
       app.innerHTML = `
         ${renderHeader(data.title)}
+        ${imageHtml}
         <div class="card text-center muted">
           Esta cotización ya fue cerrada por el administrador. Gracias por tu interés.
         </div>
       `;
+      setupImageZoom();
       return;
     }
 
     if (!data.parts || data.parts.length === 0) {
+      const imageHtml = renderQuoteImage(data.image || '');
       app.innerHTML = `
         ${renderHeader(data.title)}
+        ${imageHtml}
         <div class="card text-center muted">
           Esta cotización aún no tiene repuestos cargados.
         </div>
       `;
+      setupImageZoom();
       return;
     }
 

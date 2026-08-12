@@ -34,6 +34,47 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
 });
 
 // ---------------------------------------------------------------------
+// Manejo de imagen de la cotización
+// ---------------------------------------------------------------------
+const quoteImageInput = document.getElementById('quote-image-input');
+const quoteImageThumb = document.getElementById('quote-image-thumb');
+const quoteImagePlaceholder = document.getElementById('quote-image-placeholder');
+const quoteRemoveImageBtn = document.getElementById('quote-remove-image');
+let quoteImageData = '';
+
+function setQuoteImage(dataUrl) {
+  quoteImageData = dataUrl || '';
+  if (dataUrl) {
+    quoteImageThumb.src = dataUrl;
+    quoteImageThumb.style.display = 'block';
+    quoteImagePlaceholder.style.display = 'none';
+    quoteRemoveImageBtn.style.display = 'inline';
+  } else {
+    quoteImageThumb.src = '';
+    quoteImageThumb.style.display = 'none';
+    quoteImagePlaceholder.style.display = 'block';
+    quoteRemoveImageBtn.style.display = 'none';
+  }
+}
+
+quoteImageInput.addEventListener('change', async () => {
+  const file = quoteImageInput.files[0];
+  if (!file) return;
+  quoteImagePlaceholder.textContent = 'Procesando…';
+  try {
+    const compressed = await compressImageFile(file);
+    setQuoteImage(compressed);
+  } catch (err) {
+    alert(err.message || 'No se pudo procesar la imagen.');
+  } finally {
+    quoteImagePlaceholder.innerHTML = '📷<br>Subir imagen';
+    quoteImageInput.value = '';
+  }
+});
+
+quoteRemoveImageBtn.addEventListener('click', () => setQuoteImage(''));
+
+// ---------------------------------------------------------------------
 // Formulario dinámico de repuestos
 // ---------------------------------------------------------------------
 const partsList = document.getElementById('parts-list');
@@ -162,6 +203,7 @@ createForm.addEventListener('submit', async (e) => {
   createErrorBox.innerHTML = '';
 
   const title = document.getElementById('title').value.trim();
+  const image = quoteImageData;  // <-- AGREGADO
   const parts = Array.from(partsList.querySelectorAll('.part-row')).map((row) => ({
     name: row.querySelector('.part-name').value.trim(),
     code: row.querySelector('.part-code').value.trim(),
@@ -187,7 +229,7 @@ createForm.addEventListener('submit', async (e) => {
     const res = await fetch('/api/quotes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, parts }),
+      body: JSON.stringify({ title, parts, image }),  // <-- incluir image
     });
     const data = await res.json();
 
@@ -200,6 +242,7 @@ createForm.addEventListener('submit', async (e) => {
       '<div class="alert-success">✅ Cotización creada. Copia el enlace de abajo y envíalo a tus proveedores.</div>';
 
     createForm.reset();
+    setQuoteImage('');  // <-- limpiar imagen
     partsList.innerHTML = '';
     partKeyCounter = 0;
     addPartRow();

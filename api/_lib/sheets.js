@@ -5,7 +5,7 @@ const { google } = require('googleapis');
 // El orden aquí DEBE coincidir con el orden real de columnas en el sheet.
 // =====================================================================
 const SHEETS = {
-  Quotes: ['uuid', 'title', 'status', 'created_at'],
+  Quotes: ['uuid', 'title', 'image', 'status', 'created_at'],   // <-- AGREGADO 'image'
   Parts: ['id', 'quote_uuid', 'name', 'code', 'unit', 'description', 'quantity', 'image'],
   Suppliers: ['id', 'quote_uuid', 'company', 'phone', 'email', 'submitted_at'],
   Bids: ['id', 'supplier_id', 'part_id', 'price', 'notes'],
@@ -143,7 +143,7 @@ async function deleteRow(sheetName, rowNumber) {
 }
 
 /**
- * Crea las 4 pestañas y sus encabezados si no existen todavía.
+ * Crea las 5 pestañas y sus encabezados si no existen todavía.
  * Se cachea en memoria del proceso (cada función serverless "fría"
  * lo vuelve a chequear una vez).
  */

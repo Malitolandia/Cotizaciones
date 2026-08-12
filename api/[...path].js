@@ -109,7 +109,13 @@ module.exports = async (req, res) => {
           quantity: Number(p.quantity) > 0 ? Number(p.quantity) : 1,
           image: p.image || '',
         }));
-      res.status(200).json({ uuid: quote.uuid, title: quote.title, status: quote.status, parts });
+      res.status(200).json({
+        uuid: quote.uuid,
+        title: quote.title,
+        image: quote.image || '',     // <-- AGREGADO
+        status: quote.status,
+        parts,
+      });
       return;
     }
 
@@ -213,8 +219,9 @@ module.exports = async (req, res) => {
 
     // POST /api/quotes (crear)
     if (url === '/api/quotes' && method === 'POST') {
-      const { title, parts } = body;
+      const { title, parts, image } = body;  // <-- AGREGADO image
       const cleanTitle = (title || '').trim();
+      const cleanImage = typeof image === 'string' ? image.slice(0, 45000) : '';
       if (!cleanTitle) {
         res.status(400).json({ error: 'El título es obligatorio' });
         return;
@@ -241,6 +248,7 @@ module.exports = async (req, res) => {
       await appendRow('Quotes', {
         uuid,
         title: cleanTitle,
+        image: cleanImage,      // <-- AGREGADO
         status: 'ACTIVE',
         created_at: new Date().toISOString(),
       });
@@ -490,7 +498,13 @@ module.exports = async (req, res) => {
           image: p.image || '',
           hasBids: bidPartIds.has(p.id),
         }));
-      res.status(200).json({ uuid: quote.uuid, title: quote.title, status: quote.status, parts });
+      res.status(200).json({
+        uuid: quote.uuid,
+        title: quote.title,
+        image: quote.image || '',    // <-- AGREGADO
+        status: quote.status,
+        parts,
+      });
       return;
     }
 
@@ -501,8 +515,9 @@ module.exports = async (req, res) => {
         res.status(400).json({ error: 'Falta el parámetro uuid' });
         return;
       }
-      const { title, parts, removedPartIds } = body;
+      const { title, parts, removedPartIds, image } = body;  // <-- AGREGADO image
       const cleanTitle = (title || '').trim();
+      const cleanImage = typeof image === 'string' ? image.slice(0, 45000) : '';
       if (!cleanTitle) {
         res.status(400).json({ error: 'El título es obligatorio' });
         return;
@@ -517,10 +532,23 @@ module.exports = async (req, res) => {
         res.status(404).json({ error: 'Cotización no encontrada' });
         return;
       }
+
+      // Actualizar título e imagen si cambiaron
+      let needsUpdate = false;
+      const updateData = {};
       if (quote.title !== cleanTitle) {
-        const { _row, ...rest } = quote;
-        await updateRow('Quotes', _row, { ...rest, title: cleanTitle });
+        updateData.title = cleanTitle;
+        needsUpdate = true;
       }
+      if ((quote.image || '') !== cleanImage) {
+        updateData.image = cleanImage;
+        needsUpdate = true;
+      }
+      if (needsUpdate) {
+        const { _row, ...rest } = quote;
+        await updateRow('Quotes', _row, { ...rest, ...updateData });
+      }
+
       const existingParts = allParts.filter(p => p.quote_uuid === uuid);
       const existingById = new Map(existingParts.map(p => [p.id, p]));
       const bidPartIds = new Set(allBids.map(b => b.part_id));
@@ -532,7 +560,7 @@ module.exports = async (req, res) => {
         const qty = Number(p.quantity);
         const cleanQty = Number.isFinite(qty) && qty > 0 ? String(qty) : '1';
         const existingForImage = p.id ? existingById.get(p.id) : null;
-        const cleanImage = typeof p.image === 'string'
+        const cleanImagePart = typeof p.image === 'string'
           ? p.image.slice(0, 45000)
           : (existingForImage ? existingForImage.image || '' : '');
         const cleanFields = {
@@ -541,7 +569,7 @@ module.exports = async (req, res) => {
           unit: (p.unit || '').trim(),
           description: (p.description || '').trim(),
           quantity: cleanQty,
-          image: cleanImage,
+          image: cleanImagePart,
         };
         if (p.id && existingById.has(p.id)) {
           const existing = existingById.get(p.id);

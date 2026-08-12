@@ -455,74 +455,6 @@ input:focus {
   text-align: center;
 }
 
-/* Tablas estándar de tu app (Se mantienen como las tenías) */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.86rem;
-  min-width: 560px;
-}
-
-thead th {
-  text-align: left;
-  padding: 10px 12px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--td);
-  background: var(--s2);
-  border-bottom: 1px solid var(--br);
-  position: sticky;
-  top: 0;
-}
-
-tbody td,
-tfoot td {
-  padding: 10px 12px;
-  border-top: 1px solid var(--br);
-  color: var(--tx);
-}
-
-tbody tr:hover td {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-td.cell-lowest {
-  background: rgba(0, 229, 160, 0.1);
-  color: var(--ac);
-  font-weight: 700;
-}
-
-td.cell-winner {
-  outline: 2px solid var(--bl);
-  outline-offset: -2px;
-  background: rgba(61, 139, 255, 0.08);
-}
-
-td.sticky-col,
-th.sticky-col {
-  position: sticky;
-  left: 0;
-  background: var(--s1);
-}
-
-thead th.sticky-col {
-  background: var(--s2);
-  z-index: 1;
-}
-
-.table-scroll {
-  overflow-x: auto;
-}
-
-tfoot td {
-  border-top: 2px solid var(--br);
-  font-weight: 700;
-  color: var(--tx);
-  background: var(--s2);
-}
-
 .contact-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -800,58 +732,71 @@ tfoot td {
 }
 
 
-/* =================================================================
-   NUEVOS ESTILOS PARA REPLICAR LA TABLA DE DEPLOYMENTS DE VERCEL
-   (Estilos de color claro, formas, padding y espaciado)
-   Aplica la clase .vercel-table a tu etiqueta <table>
-   ================================================================= */
+/* ==============================================================================
+   ESTILOS DE TABLA REESCRITOS POR COMPLETO PARA SEGUIR LA REFERENCIA DE VERCEL
+   (Fondo blanco, padding de 16px, colores claros, tipografía limpia)
+   ============================================================================== */
 
-.vercel-table {
+/* Configuración base de la tabla */
+table {
   width: 100%;
   border-collapse: collapse;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* Fuente del sistema para parecerse a la captura */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* Eliminamos fuentes exageradas */
   font-size: 14px;
-  background: #ffffff;
-  border: 1px solid #eaeaea;
+  background: #ffffff; /* Quitamos fondo oscuro */
+  border: 1px solid #eaeaea; /* Borde gris claro exacto */
   border-radius: 8px;
+  min-width: auto; /* Eliminamos el width forzado de 560px */
+  overflow: hidden;
 }
 
-.vercel-table thead th {
+/* Encabezados (Thead) */
+thead th {
   text-align: left;
-  padding: 14px 16px;
+  padding: 14px 16px; /* Padding compacto exacto */
   font-weight: 500;
   font-size: 14px;
   color: #111111;
   background: #ffffff;
   border-bottom: 1px solid #eaeaea;
-  text-transform: none; /* Quitamos las mayúsculas para igualar la imagen */
+  text-transform: none; /* Eliminamos mayúsculas */
   letter-spacing: normal;
-  position: static; /* Quitamos el sticky para no romper el diseño */
+  position: static;
 }
 
-.vercel-table tbody tr {
-  border-bottom: 1px solid #f3f4f6;
-  transition: background 0.15s ease;
+/* Filas del cuerpo (Tbody) */
+tbody tr {
+  border-bottom: 1px solid #f3f4f6; /* Línea divisoria sutil */
   background: #ffffff;
 }
-
-.vercel-table tbody tr:last-child {
+tbody tr:last-child {
   border-bottom: none;
 }
-
-.vercel-table tbody tr:hover {
-  background-color: #fafafa;
+tbody tr:hover {
+  background: #fafafa; /* Hover gris muy claro como en la imagen */
 }
 
-.vercel-table tbody td {
-  padding: 16px 16px;
+/* Celdas (Td y Tfoot) */
+tbody td,
+tfoot td {
+  padding: 16px 16px; /* Espaciado exacto de 16px, nada de márgenes exagerados */
   border-top: none;
   color: #111111;
+  background: transparent;
   vertical-align: middle;
-  background: transparent !important; /* Forzamos fondo transparente para no heredar el hover de otras tablas */
 }
 
-/* --- COMPONENTES INTERNOS DE LA TABLA (Clases auxiliares) --- */
+/* Forzamos a que los colores de la tabla no hereden las variables oscuras */
+tbody td a,
+tfoot td a {
+  color: #111111;
+}
+
+
+/* ==============================================================================
+   CLASES AUXILIARES PARA EL CONTENIDO DE LAS CELDAS (Estados, Badges, Ramas)
+   Aplica estas clases a los elementos dentro de tu <td> para replicar el diseño
+   ============================================================================== */
 
 /* Columna de estado (Ready + tiempo) */
 .vercel-status {
@@ -862,7 +807,7 @@ tfoot td {
 .vercel-dot-ready {
   width: 8px;
   height: 8px;
-  background: #10b981;
+  background: #10b981; /* Punto verde exacto */
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -910,13 +855,13 @@ tfoot td {
   color: #9ca3af;
 }
 
-/* Columna de tiempo */
+/* Columna de tiempo (Alineada a la derecha) */
 .vercel-time {
   text-align: right;
   color: #6b7280;
 }
 
-/* Columna de acciones */
+/* Columna de acciones (3 puntitos) */
 .vercel-actions {
   text-align: right;
   color: #6b7280;

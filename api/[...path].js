@@ -86,7 +86,7 @@ module.exports = async (req, res) => {
     }
 
     // ============================================================
-    // RUTAS PÚBLICAS (originalmente públicas)
+    // RUTAS PÚBLICAS
     // ============================================================
 
     // GET /api/quote (público)
@@ -119,12 +119,35 @@ module.exports = async (req, res) => {
       return;
     }
 
-    // POST /api/suppliers (público)
+    // GET /api/supplier-lookup (público) - para autocompletar
+    if (url === '/api/supplier-lookup' && method === 'GET') {
+      const phone = query.phone || '';
+      const normalized = normalizePhone(phone);
+      if (!normalized || normalized.length < 7) {
+        res.status(200).json({ found: false });
+        return;
+      }
+      const suppliers = await getRows('Suppliers');
+      // Buscar por teléfono normalizado en cualquier cotización
+      const match = suppliers.find(s => normalizePhone(s.phone) === normalized);
+      if (match) {
+        res.status(200).json({
+          found: true,
+          company: match.company,
+          phone: match.phone,
+          // Devolvemos también el supplierId si existe? No lo necesitamos aquí.
+        });
+      } else {
+        res.status(200).json({ found: false });
+      }
+      return;
+    }
+
+    // POST /api/suppliers (público) - ahora solo registra si no existe
     if (url === '/api/suppliers' && method === 'POST') {
-      const { uuid, company, phone, email } = body;
+      const { uuid, company, phone } = body;
       const cleanCompany = (company || '').trim();
       const cleanPhone = (phone || '').trim();
-      const cleanEmail = (email || '').trim();
       if (!uuid || !cleanCompany || !cleanPhone) {
         res.status(400).json({ error: 'Empresa y teléfono son obligatorios' });
         return;
@@ -139,56 +162,60 @@ module.exports = async (req, res) => {
         res.status(400).json({ error: 'Esta cotización ya fue cerrada' });
         return;
       }
+
+      // Verificar si ya existe un proveedor con ese teléfono para esta cotización
       const suppliers = await getRows('Suppliers');
       const normalized = cleanPhone.replace(/\D/g, '');
       const existing = suppliers.find(
-        s => s.quote_uuid === uuid && s.phone.replace(/\D/g, '') === normalized
+        s => s.quote_uuid === uuid && normalizePhone(s.phone) === normalized
       );
+
+      let supplierId;
       if (existing) {
-        res.status(409).json({
-          error: 'Este número de teléfono ya envió una cotización para este listado. Si necesitas corregir precios, contacta al administrador.'
+        // Si ya existe, usamos ese supplierId
+        supplierId = existing.id;
+        // Opcional: actualizar empresa por si cambió
+        if (existing.company !== cleanCompany) {
+          const { _row, ...rest } = existing;
+          await updateRow('Suppliers', _row, { ...rest, company: cleanCompany });
+        }
+      } else {
+        // Si no existe, lo creamos
+        supplierId = crypto.randomUUID();
+        await appendRow('Suppliers', {
+          id: supplierId,
+          quote_uuid: uuid,
+          company: cleanCompany,
+          phone: cleanPhone,
+          email: '', // ya no se pide
+          submitted_at: new Date().toISOString(),
         });
-        return;
       }
-      const supplierId = crypto.randomUUID();
-      await appendRow('Suppliers', {
-        id: supplierId,
-        quote_uuid: uuid,
-        company: cleanCompany,
-        phone: cleanPhone,
-        email: cleanEmail,
-        submitted_at: new Date().toISOString(),
-      });
-      res.status(201).json({ supplierId });
+      res.status(200).json({ supplierId });
       return;
     }
 
-    // ============================================================
-    // POST /api/bids (público) - MODIFICADO: sin notas y permite vacío
-    // ============================================================
+    // POST /api/bids (público) - sin notas, permite vacío
     if (url === '/api/bids' && method === 'POST') {
       const { supplierId, bids } = body;
       if (!supplierId || !Array.isArray(bids)) {
         res.status(400).json({ error: 'Parámetros inválidos' });
         return;
       }
-      // Permitir que bids esté vacío (el proveedor no cotiza ningún repuesto)
       const cleanBids = bids
         .map(b => ({
           id: crypto.randomUUID(),
           supplier_id: supplierId,
           part_id: b.partId,
           price: String(b.price ?? '').trim(),
-          notes: '', // ya no se usa, pero mantenemos la columna vacía
+          notes: '',
         }))
         .filter(b => b.part_id && b.price.length > 0 && !Number.isNaN(Number(b.price)));
-      // Si hay bids, guardarlos
       if (cleanBids.length > 0) {
         await appendRows('Bids', cleanBids);
       }
       res.status(201).json({ ok: true });
 
-      // Notificación (asíncrona) solo si hay al menos un bid
       if (cleanBids.length > 0) {
         try {
           const [suppliers, quotes] = await Promise.all([getRows('Suppliers'), getRows('Quotes')]);
@@ -537,7 +564,6 @@ module.exports = async (req, res) => {
         return;
       }
 
-      // Actualizar título e imagen si cambiaron
       let needsUpdate = false;
       const updateData = {};
       if (quote.title !== cleanTitle) {

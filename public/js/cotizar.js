@@ -1,6 +1,3 @@
-// ================================================================
-// VERSIÓN 2026-08-12 - SIN NOTAS - SI VES ESTO, ESTÁS USANDO LA NUEVA
-// ================================================================
 function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, (c) => ({
     '&': '&amp;',
@@ -11,12 +8,11 @@ function escapeHtml(str) {
   }[c]));
 }
 
-console.log('✅ cotizar.js CARGADO - VERSIÓN SIN NOTAS');
-
 const app = document.getElementById('app');
 const uuid = new URLSearchParams(window.location.search).get('uuid');
 
 let quoteData = null;
+let supplierId = null; // se llena al registrar/obtener proveedor
 
 // ---------------------------------------------------------------------
 // Renderizado de la imagen con modal de zoom
@@ -59,83 +55,40 @@ function renderHeader(title) {
 }
 
 // ---------------------------------------------------------------------
-// Paso 1: Registro del proveedor
+// Autocompletar empresa según teléfono
 // ---------------------------------------------------------------------
-function renderRegisterStep() {
-  const imageHtml = renderQuoteImage(quoteData.image || '');
-  app.innerHTML = `
-    ${renderHeader(quoteData.title)}
-    ${imageHtml}
-    <form id="register-form" class="card">
-      <h2>Datos de tu empresa</h2>
-      <p class="subtitle">Ingresa tus datos antes de cotizar los repuestos.</p>
+let lookupTimeout = null;
 
-      <div class="field">
-        <label class="label" for="company">Empresa *</label>
-        <input id="company" type="text" required />
-      </div>
-      <div class="field">
-        <label class="label" for="phone">Teléfono (WhatsApp) *</label>
-        <input id="phone" type="tel" required />
-      </div>
-      <div class="field">
-        <label class="label" for="email">Email (opcional)</label>
-        <input id="email" type="email" />
-      </div>
+function setupAutocomplete() {
+  const phoneInput = document.getElementById('phone');
+  const companyInput = document.getElementById('company');
 
-      <div id="register-error"></div>
-
-      <button type="submit" id="register-submit" class="btn btn-primary">Continuar</button>
-    </form>
-  `;
-
-  setupImageZoom();
-
-  const form = document.getElementById('register-form');
-  const errorBox = document.getElementById('register-error');
-  const submitBtn = document.getElementById('register-submit');
-
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    errorBox.innerHTML = '';
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Enviando…';
-
-    const company = document.getElementById('company').value.trim();
-    const phone = document.getElementById('phone').value.trim();
-    const email = document.getElementById('email').value.trim();
-
-    try {
-      const res = await fetch('/api/suppliers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uuid, company, phone, email }),
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        errorBox.innerHTML = `<div class="alert-error">${escapeHtml(data.error || 'Error al enviar')}</div>`;
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Continuar';
-        return;
+  phoneInput.addEventListener('input', () => {
+    clearTimeout(lookupTimeout);
+    const phone = phoneInput.value.trim();
+    if (phone.length < 7) return; // esperar al menos 7 dígitos
+    lookupTimeout = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/supplier-lookup?phone=${encodeURIComponent(phone)}`);
+        const data = await res.json();
+        if (data.found && data.company) {
+          // Si el teléfono coincide, autocompletar empresa
+          companyInput.value = data.company;
+        } else {
+          // Si no se encuentra, no borramos lo que el usuario haya escrito
+        }
+      } catch (e) {
+        // silencioso
       }
-
-      renderBidsStep(data.supplierId);
-    } catch {
-      errorBox.innerHTML = '<div class="alert-error">Error de conexión. Intenta de nuevo.</div>';
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Continuar';
-    }
+    }, 400);
   });
 }
 
 // ---------------------------------------------------------------------
-// Paso 2: Ingreso de precios (SIN NOTAS - ESTRUCTURA SIMPLIFICADA)
+// Renderizado único: datos + precios
 // ---------------------------------------------------------------------
-function renderBidsStep(supplierId) {
+function renderCombinedStep() {
   const imageHtml = renderQuoteImage(quoteData.image || '');
-  
-  // Construcción de la lista de repuestos SOLO con precio, sin notas
   const partsHtml = quoteData.parts
     .map(
       (part) => `
@@ -145,7 +98,9 @@ function renderBidsStep(supplierId) {
             <p style="font-weight:700; margin:0;">${escapeHtml(part.name)}</p>
             ${
               part.code || part.unit
-                ? `<p class="muted" style="margin:2px 0;">${part.code ? 'Código: ' + escapeHtml(part.code) : ''} ${part.unit ? '· Unidad: ' + escapeHtml(part.unit) : ''}</p>`
+                ? `<p class="muted" style="margin:2px 0;">${part.code ? 'Código: ' + escapeHtml(part.code) : ''} ${
+                    part.unit ? '· Unidad: ' + escapeHtml(part.unit) : ''
+                  }</p>`
                 : ''
             }
             <p class="muted" style="margin:2px 0; font-weight:700;">Cantidad solicitada: ${part.quantity || 1}</p>
@@ -157,9 +112,8 @@ function renderBidsStep(supplierId) {
               : ''
           }
         </div>
-        <!-- SOLO CAMPO DE PRECIO - SIN NOTAS -->
         <div style="margin-top:8px;">
-          <input type="number" step="0.01" min="0" class="bid-price" data-part-id="${part.id}" placeholder="Precio unitario (COP)" style="width:100%; padding:10px 12px; border:1px solid var(--br); border-radius:8px; font-size:0.9rem; background:var(--s2); color:var(--tx); outline:none; font-family:'Space Grotesk', sans-serif;" />
+          <input type="number" step="0.01" min="0" class="bid-price" data-part-id="${part.id}" placeholder="Precio unitario (COP)" />
         </div>
       </div>
     `
@@ -169,49 +123,90 @@ function renderBidsStep(supplierId) {
   app.innerHTML = `
     ${renderHeader(quoteData.title)}
     ${imageHtml}
-    <form id="bids-form" class="card">
+    <form id="combined-form" class="card">
+      <h2>Datos de tu empresa</h2>
+      <div class="field">
+        <label class="label" for="company">Empresa *</label>
+        <input id="company" type="text" required />
+      </div>
+      <div class="field">
+        <label class="label" for="phone">Teléfono (WhatsApp) *</label>
+        <input id="phone" type="tel" required />
+      </div>
+
+      <hr style="border-color: var(--br); margin: 20px 0;" />
+
       <h2>Ingresa tus precios</h2>
       <p class="subtitle">Completa el precio para cada repuesto (deja en blanco si no manejas alguno).</p>
       ${partsHtml}
-      <div id="bids-error"></div>
-      <button type="submit" id="bids-submit" class="btn btn-primary" style="margin-top:8px;">Enviar cotización</button>
+
+      <div id="combined-error"></div>
+      <button type="submit" id="combined-submit" class="btn btn-primary" style="margin-top:16px;">Enviar cotización</button>
     </form>
   `;
 
   setupImageZoom();
+  setupAutocomplete();
 
-  const form = document.getElementById('bids-form');
-  const errorBox = document.getElementById('bids-error');
-  const submitBtn = document.getElementById('bids-submit');
+  const form = document.getElementById('combined-form');
+  const errorBox = document.getElementById('combined-error');
+  const submitBtn = document.getElementById('combined-submit');
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     errorBox.innerHTML = '';
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Enviando precios…';
+    submitBtn.textContent = 'Enviando…';
 
-    const bids = Array.from(document.querySelectorAll('.bid-price'))
-      .map((input) => ({
-        partId: input.dataset.partId,
-        price: input.value.trim(),
-      }))
-      .filter((b) => b.price.length > 0);
+    const company = document.getElementById('company').value.trim();
+    const phone = document.getElementById('phone').value.trim();
 
+    if (!company || !phone) {
+      errorBox.innerHTML = '<div class="alert-error">Empresa y teléfono son obligatorios.</div>';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Enviar cotización';
+      return;
+    }
+
+    // Paso 1: Registrar/obtener proveedor
     try {
-      const res = await fetch('/api/bids', {
+      const regRes = await fetch('/api/suppliers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uuid, company, phone }),
+      });
+      const regData = await regRes.json();
+      if (!regRes.ok) {
+        errorBox.innerHTML = `<div class="alert-error">${escapeHtml(regData.error || 'Error al registrar')}</div>`;
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Enviar cotización';
+        return;
+      }
+      supplierId = regData.supplierId;
+
+      // Paso 2: Recolectar precios
+      const bids = Array.from(document.querySelectorAll('.bid-price'))
+        .map((input) => ({
+          partId: input.dataset.partId,
+          price: input.value.trim(),
+        }))
+        .filter((b) => b.price.length > 0);
+
+      // Enviar precios
+      const bidRes = await fetch('/api/bids', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ supplierId, bids }),
       });
-      const data = await res.json();
-
-      if (!res.ok) {
-        errorBox.innerHTML = `<div class="alert-error">${escapeHtml(data.error || 'Error al enviar')}</div>`;
+      const bidData = await bidRes.json();
+      if (!bidRes.ok) {
+        errorBox.innerHTML = `<div class="alert-error">${escapeHtml(bidData.error || 'Error al enviar precios')}</div>`;
         submitBtn.disabled = false;
         submitBtn.textContent = 'Enviar cotización';
         return;
       }
 
+      // Éxito
       app.innerHTML = `
         ${renderHeader(quoteData.title)}
         ${imageHtml}
@@ -221,7 +216,7 @@ function renderBidsStep(supplierId) {
           <p class="subtitle" style="margin-top:4px;">Gracias por tu tiempo. El administrador revisará tu propuesta.</p>
         </div>
       `;
-    } catch {
+    } catch (err) {
       errorBox.innerHTML = '<div class="alert-error">Error de conexión. Intenta de nuevo.</div>';
       submitBtn.disabled = false;
       submitBtn.textContent = 'Enviar cotización';
@@ -233,7 +228,6 @@ function renderBidsStep(supplierId) {
 // Inicialización
 // ---------------------------------------------------------------------
 async function init() {
-  console.log('🔍 Iniciando cotizar.js con uuid:', uuid);
   if (!uuid) {
     app.innerHTML = '<div class="card alert-error">Enlace inválido: falta el identificador de la cotización.</div>';
     return;
@@ -249,7 +243,6 @@ async function init() {
     }
 
     quoteData = data;
-    console.log('📦 Datos cargados:', quoteData);
 
     if (data.status === 'CLOSED') {
       const imageHtml = renderQuoteImage(data.image || '');
@@ -277,9 +270,8 @@ async function init() {
       return;
     }
 
-    renderRegisterStep();
-  } catch (err) {
-    console.error('❌ Error en init:', err);
+    renderCombinedStep();
+  } catch {
     app.innerHTML = '<div class="card alert-error">Error de conexión. Intenta de nuevo más tarde.</div>';
   }
 }
